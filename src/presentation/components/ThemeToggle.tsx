@@ -2,9 +2,10 @@ import Feather from "@expo/vector-icons/Feather";
 import { useEffect } from "react";
 import { Appearance, Pressable, useColorScheme, View } from "react-native";
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from "react-native-reanimated";
 
 export default function ThemeToggle() {
@@ -13,9 +14,9 @@ export default function ThemeToggle() {
   const translateX = useSharedValue(isDark ? 46 : 3.5);
 
   useEffect(() => {
-    translateX.value = withSpring(isDark ? 46 : 3.5, {
-      damping: 15,
-      stiffness: 150,
+    translateX.value = withTiming(isDark ? 46 : 3.5, {
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
     });
   }, [isDark, translateX]);
 
