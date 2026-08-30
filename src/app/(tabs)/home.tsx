@@ -1,3 +1,4 @@
+import LogoutButton from "@/features/auth/components/LogoutButton";
 import ThemeToggle from "@/presentation/components/ThemeToggle";
 import { Text, View } from "react-native";
 
@@ -9,6 +10,8 @@ const HomePage = () => {
       </Text>
 
       <ThemeToggle />
+
+      <LogoutButton />
     </View>
   );
 };

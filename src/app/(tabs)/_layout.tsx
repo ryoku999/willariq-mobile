@@ -1,11 +1,31 @@
+import { useAuthStore } from "@/infrastructure/storage/auth-storage";
 import Feather from "@expo/vector-icons/Feather";
 import Octicons from "@expo/vector-icons/Octicons";
-import { Tabs } from "expo-router";
-import { useColorScheme } from "react-native";
+import { Redirect, Tabs } from "expo-router";
+import { ActivityIndicator, useColorScheme, View } from "react-native";
 
 const TabLayout = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { status } = useAuthStore();
+
+  if (status === "hydrating") {
+    return (
+      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
+        <ActivityIndicator color={`${isDark ? "#111827" : "#ffffff"}`} />
+      </View>
+    );
+  }
+
+  if (status === "anonymous") {
+    return (
+      <Redirect
+        href={{
+          pathname: "/login",
+        }}
+      />
+    );
+  }
 
   return (
     <Tabs
@@ -35,6 +55,16 @@ const TabLayout = () => {
           title: "Reportar",
           tabBarIcon: ({ color, size }) => (
             <Octicons name="report" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Perfil",
+          tabBarIcon: ({ color, size }) => (
+            <Octicons name="person" size={size} color={color} />
           ),
         }}
       />
