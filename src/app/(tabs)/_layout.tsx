@@ -60,6 +60,16 @@ const TabLayout = () => {
       />
 
       <Tabs.Screen
+        name="incidents"
+        options={{
+          title: "Incidencias",
+          tabBarIcon: ({ color, size }) => (
+            <Octicons name="checklist" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="notifications"
         options={{
           title: "Notificaciones",
