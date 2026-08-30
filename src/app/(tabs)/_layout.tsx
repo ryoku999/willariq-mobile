@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/infrastructure/storage/auth-storage";
+import { useUnreadNotifications } from "@/infrastructure/hooks/use-notifications";
 import Feather from "@expo/vector-icons/Feather";
 import Octicons from "@expo/vector-icons/Octicons";
 import { Redirect, Tabs } from "expo-router";
@@ -8,6 +9,10 @@ const TabLayout = () => {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { status } = useAuthStore();
+  const unreadNotifications = useUnreadNotifications(
+    status === "authenticated",
+  );
+  const unreadCount = unreadNotifications.data?.data.count ?? 0;
 
   if (status === "hydrating") {
     return (
@@ -73,6 +78,12 @@ const TabLayout = () => {
         name="notifications"
         options={{
           title: "Notificaciones",
+          tabBarBadge:
+            unreadCount > 0
+              ? unreadCount > 99
+                ? "99+"
+                : unreadCount
+              : undefined,
           tabBarIcon: ({ color, size }) => (
             <Octicons name="bell" size={size} color={color} />
           ),
