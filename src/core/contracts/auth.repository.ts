@@ -1,3 +1,4 @@
+import { ApiEnvelope } from "@/shared/interfaces/api-response.interface";
 import {
   LoginReq,
   LoginRes,
@@ -6,6 +7,6 @@ import {
 } from "../entities/auth.entity";
 
 export interface AuthRepository {
-  mobileLogin: (dto: LoginReq) => Promise<LoginRes>;
-  mobileLogout: (dto: LogoutReq) => Promise<LogoutRes>;
+  mobileLogin: (dto: LoginReq) => Promise<ApiEnvelope<LoginRes>>;
+  mobileLogout: (dto: LogoutReq) => Promise<ApiEnvelope<LogoutRes>>;
 }
