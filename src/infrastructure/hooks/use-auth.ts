@@ -1,7 +1,6 @@
-import { queryClient } from "@/config/query/query-client";
 import { LoginReq } from "@/core/entities/auth.entity";
+import { endSession } from "@/infrastructure/auth/auth-session";
 import { useMutation } from "@tanstack/react-query";
-import { router } from "expo-router";
 import { authService } from "../services/auth.sevice";
 import { useAuthStore } from "../storage/auth-storage";
 import { tokenStorage } from "../storage/toke-storage";
@@ -21,26 +20,18 @@ export const useLogin = () => {
 };
 
 export const useLogout = () => {
-  const { setAnonymous } = useAuthStore();
-
   return useMutation({
     mutationKey: ["mobile", "logout"],
     mutationFn: async () => {
       const tokens = await tokenStorage.getTokens();
-      try {
-        if (tokens) {
-          await authService.mobileLogout({
-            refreshToken: tokens.refreshToken,
-          });
-        }
-      } finally {
-        await tokenStorage.clearTokens();
+
+      await endSession();
+
+      if (tokens) {
+        await authService.mobileLogout({
+          refreshToken: tokens.refreshToken,
+        });
       }
-    },
-    onSettled: () => {
-      setAnonymous();
-      queryClient.clear();
-      router.replace("/login");
     },
   });
 };
