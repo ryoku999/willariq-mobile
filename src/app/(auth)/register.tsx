@@ -1,11 +1,14 @@
-import { loginSchema, loginT } from "@/features/auth/schemas/login.scheme";
-import { useLogin } from "@/infrastructure/hooks/use-auth";
-import { getApiErrorMessages } from "@/shared/errors/api-error";
 import Feather from "@expo/vector-icons/Feather";
+import {
+  userCreateReqSchema,
+  UserCreateReqT,
+} from "@/features/auth/schemas/user-register.scheme";
+import { useCreateUser } from "@/infrastructure/hooks/use-auth";
+import { getApiErrorMessages } from "@/shared/errors/api-error";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { router } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { router } from "expo-router";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -18,8 +21,8 @@ import {
   View,
 } from "react-native";
 
-const LoginPage = () => {
-  const login = useLogin();
+const RegisterPage = () => {
+  const createUser = useCreateUser();
   const [isPasswordVisible, setPasswordVisible] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const isDark = useColorScheme() === "dark";
@@ -28,22 +31,31 @@ const LoginPage = () => {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<loginT>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<UserCreateReqT>({
+    resolver: zodResolver(userCreateReqSchema),
     defaultValues: {
       dni: "",
+      firstName: "",
+      lastName: "",
       password: "",
+      phone: "",
     },
   });
 
-  const onSubmit = (values: loginT) => {
+  const onSubmit = (values: UserCreateReqT) => {
     setApiErrors([]);
-    login.mutate(values, {
-      onError: (err) => {
-        console.error("Error al iniciar sesión:", err);
-        setApiErrors(getApiErrorMessages(err));
+    createUser.mutate(
+      { ...values, lastName: values.lastName || null },
+      {
+        onSuccess: () => {
+          router.replace("/login");
+        },
+        onError: (error) => {
+          console.error("Error al registrar usuario:", error);
+          setApiErrors(getApiErrorMessages(error));
+        },
       },
-    });
+    );
   };
 
   return (
@@ -61,22 +73,84 @@ const LoginPage = () => {
             WILLARIQ
           </Text>
           <Text className="mt-5 text-3xl font-bold text-white">
-            Bienvenido de vuelta
+            Crea tu cuenta
           </Text>
           <Text className="mt-2 text-base leading-6 text-blue-100">
-            Ingresa tus datos para continuar en la aplicación.
+            Completa tus datos para comenzar a usar la aplicación.
           </Text>
         </View>
 
         <View className="mx-5 -mt-5 rounded-3xl bg-white p-5 shadow-sm dark:bg-gray-900">
           <Text className="text-xl font-bold text-gray-900 dark:text-white">
-            Iniciar sesión
+            Registro de usuario
           </Text>
           <Text className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Usa las credenciales registradas para tu cuenta.
+            Todos los campos, excepto el apellido, son obligatorios.
           </Text>
 
           <View className="mt-7 gap-5">
+            <View>
+              <Text className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Nombres
+              </Text>
+              <View
+                className={`flex-row items-center rounded-2xl border bg-gray-50 px-4 dark:bg-gray-950 ${errors.firstName ? "border-red-500" : "border-gray-200 dark:border-gray-800"}`}
+              >
+                <Feather
+                  name="user"
+                  size={19}
+                  color={isDark ? "#9ca3af" : "#6b7280"}
+                />
+                <Controller
+                  control={control}
+                  name="firstName"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Ingresa tus nombres"
+                      placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
+                      autoCapitalize="words"
+                      className="flex-1 px-3 py-4 text-base text-gray-900 dark:text-white"
+                    />
+                  )}
+                />
+              </View>
+              {errors.firstName && (
+                <FieldError message={errors.firstName.message} />
+              )}
+            </View>
+
+            <View>
+              <Text className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Apellidos{" "}
+                <Text className="font-normal text-gray-400">(opcional)</Text>
+              </Text>
+              <View className="flex-row items-center rounded-2xl border border-gray-200 bg-gray-50 px-4 dark:border-gray-800 dark:bg-gray-950">
+                <Feather
+                  name="users"
+                  size={19}
+                  color={isDark ? "#9ca3af" : "#6b7280"}
+                />
+                <Controller
+                  control={control}
+                  name="lastName"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      value={value ?? ""}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Ingresa tus apellidos"
+                      placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
+                      autoCapitalize="words"
+                      className="flex-1 px-3 py-4 text-base text-gray-900 dark:text-white"
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
             <View>
               <Text className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Documento de identidad
@@ -101,17 +175,44 @@ const LoginPage = () => {
                       placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                       keyboardType="numeric"
                       maxLength={8}
-                      returnKeyType="next"
                       className="flex-1 px-3 py-4 text-base text-gray-900 dark:text-white"
                     />
                   )}
                 />
               </View>
-              {errors.dni && (
-                <Text className="mt-1.5 text-sm text-red-600 dark:text-red-400">
-                  {errors.dni.message}
-                </Text>
-              )}
+              {errors.dni && <FieldError message={errors.dni.message} />}
+            </View>
+
+            <View>
+              <Text className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Teléfono
+              </Text>
+              <View
+                className={`flex-row items-center rounded-2xl border bg-gray-50 px-4 dark:bg-gray-950 ${errors.phone ? "border-red-500" : "border-gray-200 dark:border-gray-800"}`}
+              >
+                <Feather
+                  name="phone"
+                  size={19}
+                  color={isDark ? "#9ca3af" : "#6b7280"}
+                />
+                <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      placeholder="Ingresa tu teléfono"
+                      placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
+                      keyboardType="phone-pad"
+                      maxLength={9}
+                      className="flex-1 px-3 py-4 text-base text-gray-900 dark:text-white"
+                    />
+                  )}
+                />
+              </View>
+              {errors.phone && <FieldError message={errors.phone.message} />}
             </View>
 
             <View>
@@ -134,7 +235,7 @@ const LoginPage = () => {
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
-                      placeholder="Ingresa tu contraseña"
+                      placeholder="Crea una contraseña"
                       placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
                       secureTextEntry={!isPasswordVisible}
                       autoCapitalize="none"
@@ -162,27 +263,25 @@ const LoginPage = () => {
                 </Pressable>
               </View>
               {errors.password && (
-                <Text className="mt-1.5 text-sm text-red-600 dark:text-red-400">
-                  {errors.password.message}
-                </Text>
+                <FieldError message={errors.password.message} />
               )}
             </View>
           </View>
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Iniciar sesión"
+            accessibilityLabel="Crear cuenta"
             onPress={handleSubmit(onSubmit)}
-            disabled={login.isPending}
+            disabled={createUser.isPending}
             className="mt-7 min-h-14 flex-row items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 disabled:opacity-50 dark:bg-blue-500"
           >
-            {login.isPending ? (
+            {createUser.isPending ? (
               <ActivityIndicator color="white" />
             ) : (
-              <Feather name="log-in" size={19} color="white" />
+              <Feather name="user-plus" size={19} color="white" />
             )}
             <Text className="text-base font-semibold text-white">
-              {login.isPending ? "Ingresando..." : "Iniciar sesión"}
+              {createUser.isPending ? "Creando cuenta..." : "Crear cuenta"}
             </Text>
           </Pressable>
 
@@ -201,15 +300,15 @@ const LoginPage = () => {
 
           <View className="mt-6 flex-row items-center justify-center gap-1">
             <Text className="text-sm text-gray-500 dark:text-gray-400">
-              ¿No tienes una cuenta?
+              ¿Ya tienes una cuenta?
             </Text>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Crear una cuenta"
-              onPress={() => router.push("/register")}
+              accessibilityLabel="Ir a iniciar sesión"
+              onPress={() => router.replace("/login")}
             >
               <Text className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                Regístrate
+                Inicia sesión
               </Text>
             </Pressable>
           </View>
@@ -219,4 +318,14 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+const FieldError = ({ message }: { message?: string }) => {
+  if (!message) return null;
+
+  return (
+    <Text className="mt-1.5 text-sm text-red-600 dark:text-red-400">
+      {message}
+    </Text>
+  );
+};
+
+export default RegisterPage;

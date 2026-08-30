@@ -34,3 +34,26 @@ export interface LogoutReq {
 export interface LogoutRes {
   message: string;
 }
+
+// user create request
+export interface UserCreateReq {
+  firstName: string;
+  dni: string;
+  phone: string;
+  password: string;
+  lastName: string | null;
+}
+
+export interface UserCreateRes {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  dni: string;
+  email: string | null;
+  emailVerifiedAt: string | null;
+  role: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
