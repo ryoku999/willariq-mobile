@@ -54,7 +54,17 @@ const TabLayout = () => {
         options={{
           title: "Reportar",
           tabBarIcon: ({ color, size }) => (
-            <Octicons name="report" size={size} color={color} />
+            <Octicons name="plus-circle" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notificaciones",
+          tabBarIcon: ({ color, size }) => (
+            <Octicons name="bell" size={size} color={color} />
           ),
         }}
       />
