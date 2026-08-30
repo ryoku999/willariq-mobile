@@ -3,13 +3,13 @@ import {
   UserCreateReqT,
 } from "@/features/auth/schemas/user-register.scheme";
 import { useCreateUser } from "@/infrastructure/hooks/use-auth";
+import { KeyboardAwareScrollView } from "@/presentation/components/KeyboardAwareScrollView";
 import { getApiErrorMessages } from "@/shared/errors/api-error";
 import Feather from "@expo/vector-icons/Feather";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import {
   ActivityIndicator,
   Pressable,

@@ -1,5 +1,6 @@
 import { loginSchema, loginT } from "@/features/auth/schemas/login.scheme";
 import { useLogin } from "@/infrastructure/hooks/use-auth";
+import { KeyboardAwareScrollView } from "@/presentation/components/KeyboardAwareScrollView";
 import { getApiErrorMessages } from "@/shared/errors/api-error";
 import Feather from "@expo/vector-icons/Feather";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +15,6 @@ import {
   useColorScheme,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 
 const LoginPage = () => {
   const login = useLogin();
