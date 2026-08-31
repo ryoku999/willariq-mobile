@@ -22,6 +22,7 @@ const PUBLIC_AUTH_ROUTES = [
 
 export const api: AxiosInstance = axios.create({
   baseURL,
+  timeout: 30_000,
 });
 
 const refreshApi: AxiosInstance = axios.create({

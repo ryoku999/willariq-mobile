@@ -17,7 +17,9 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "softwareKeyboardLayoutMode": "resize",
+      "predictiveBackGestureEnabled": false,
+      "package": "com.ryoku999steam.willariq"
     },
     "web": {
       "output": "static",
@@ -33,11 +35,32 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Permite que Willariq seleccione evidencias fotográficas.",
+          "cameraPermission": "Permite que Willariq tome fotografías de la incidencia.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Permite que Willariq obtenga la ubicación de la incidencia."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "91ff8bf0-3d82-4fb9-af1b-7abac2fd9990"
+      }
+    },
+    "owner": "ryoku999s-team"
   }
 }

@@ -5,24 +5,35 @@ import {
   LoginRes,
   LogoutReq,
   LogoutRes,
+  UserCreateReq,
+  UserCreateRes,
 } from "@/core/entities/auth.entity";
+import { ApiEnvelope } from "@/shared/interfaces/api-response.interface";
 import { AxiosInstance } from "axios";
 
 class AuthService implements AuthRepository {
   private readonly prefix = "/auth";
   private readonly http: AxiosInstance = api;
 
-  async mobileLogin(dto: LoginReq): Promise<LoginRes> {
-    const { data } = await this.http.post<LoginRes>(
+  async mobileLogin(dto: LoginReq): Promise<ApiEnvelope<LoginRes>> {
+    const { data } = await this.http.post<ApiEnvelope<LoginRes>>(
       `${this.prefix}/mobile/login`,
       dto,
     );
     return data;
   }
 
-  async mobileLogout(dto: LogoutReq): Promise<LogoutRes> {
-    const { data } = await this.http.post<LogoutRes>(
+  async mobileLogout(dto: LogoutReq): Promise<ApiEnvelope<LogoutRes>> {
+    const { data } = await this.http.post<ApiEnvelope<LogoutRes>>(
       `${this.prefix}/mobile/logout`,
+      dto,
+    );
+    return data;
+  }
+
+  async createUser(dto: UserCreateReq): Promise<ApiEnvelope<UserCreateRes>> {
+    const { data } = await this.http.post<ApiEnvelope<UserCreateRes>>(
+      `${this.prefix}/register`,
       dto,
     );
     return data;

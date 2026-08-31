@@ -16,9 +16,15 @@ const AuthLayout = () => {
   }
 
   if (status === "authenticated") {
-    return <Redirect href={{ pathname: "/home" }} />;
+    return (
+      <Redirect
+        href={{
+          pathname: "/",
+        }}
+      />
+    );
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false, animation: "none" }} />;
 };
 export default AuthLayout;
