@@ -2,11 +2,12 @@ import {
   IncidentDraft,
   LocalIncidentRecord,
 } from "@/core/entities/incidents.entity";
+import axios from "axios";
+import { getSessionVersion } from "@/infrastructure/auth/auth-session";
 import { queryClient } from "@/config/query/query-client";
-import { uploadEvidenceToMinio } from "@/infrastructure/services/evidence-upload.service";
 import { incidentsService } from "@/infrastructure/services/incidents.service";
 import { useIncidentDraftStore } from "@/infrastructure/storage/incident-draft-storage";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 
 export const incidentKeys = {
   history: (id: string) => ["incidents", id, "history"] as const,
@@ -14,26 +15,31 @@ export const incidentKeys = {
   assignments: (id: string) => ["incidents", id, "assignments"] as const,
 };
 
-async function confirmEvidenceWithRecovery(
-  incidentId: string,
-  uploadId: string,
-) {
-  try {
-    await incidentsService.confirmEvidence(incidentId, uploadId);
-  } catch (error) {
-    try {
-      const evidence = await incidentsService.listEvidence(incidentId);
-      if (evidence.data.some((item) => item.uploadId === uploadId)) return;
-    } catch {
-      // Preserve the original confirmation error when reconciliation also fails.
-    }
-    throw error;
-  }
-}
-
 async function submitIncidentDraft(draft: IncidentDraft) {
   const store = useIncidentDraftStore.getState();
+  const session = getSessionVersion();
+  const checkSession = () => {
+    if (getSessionVersion() !== session) throw new Error("La sesión cambió.");
+  };
   let incident = draft.serverIncident;
+  let current = incident
+    ? await incidentsService.detail(incident.id).then(
+        (response) => response.data,
+        (error: unknown) => {
+          if (axios.isAxiosError(error) && error.response?.status === 404)
+            return null;
+          throw error;
+        },
+      )
+    : null;
+  checkSession();
+  const recoveringLegacy = Boolean(incident && !current);
+  if (recoveringLegacy) {
+    for (const evidence of draft.evidences) {
+      store.updateEvidence(evidence.localId, { status: "queued" });
+    }
+  }
+  if (!current) incident = null;
 
   if (!incident) {
     const response = await incidentsService.create({
@@ -44,87 +50,68 @@ async function submitIncidentDraft(draft: IncidentDraft) {
       address: draft.address || undefined,
       addressReference: draft.addressReference || undefined,
     });
+    checkSession();
     incident = response.data;
     store.setServerIncident(incident);
   }
 
-  for (const originalEvidence of draft.evidences) {
-    let evidence = useIncidentDraftStore
-      .getState()
-      .draft.evidences.find(
-        (item) => item.localId === originalEvidence.localId,
-      );
-    if (!evidence || evidence.status === "confirmed") continue;
-
-    try {
-      if (evidence.status === "uploaded" && evidence.uploadId) {
-        await confirmEvidenceWithRecovery(incident.id, evidence.uploadId);
-      } else {
-        store.updateEvidence(evidence.localId, {
-          status: "preparing",
-          error: undefined,
-        });
-        const presigned = await incidentsService.requestEvidenceUpload(
-          incident.id,
-          {
-            fileName: evidence.fileName,
-            mimeType: evidence.mimeType,
-            sizeBytes: evidence.sizeBytes,
-            capturedAt: evidence.capturedAt,
-          },
-        );
-
+  current ??= (await incidentsService.detail(incident.id)).data;
+  checkSession();
+  let submittedAt = current.submittedAt;
+  if (current.status === "RECEIVED") {
+    for (const evidence of draft.evidences) {
+      if (evidence.status === "confirmed" && !recoveringLegacy) continue;
+      try {
         store.updateEvidence(evidence.localId, {
           status: "uploading",
-          uploadId: presigned.data.uploadId,
+          error: undefined,
         });
-        await uploadEvidenceToMinio(presigned.data, evidence);
-        store.updateEvidence(evidence.localId, { status: "uploaded" });
-        await confirmEvidenceWithRecovery(incident.id, presigned.data.uploadId);
+        const { data } = await incidentsService.uploadEvidence(
+          incident.id,
+          evidence,
+        );
+        checkSession();
+        current = { ...current, version: data.incidentVersion };
+        store.setServerIncident({ ...incident, version: current.version });
+        store.updateEvidence(evidence.localId, { status: "confirmed" });
+      } catch (error) {
+        checkSession();
+        store.updateEvidence(evidence.localId, { status: "error" });
+        throw error;
       }
-
-      store.updateEvidence(evidence.localId, {
-        status: "confirmed",
-        error: undefined,
-      });
-    } catch (error) {
-      evidence = useIncidentDraftStore
-        .getState()
-        .draft.evidences.find((item) => item.localId === evidence?.localId);
-      store.updateEvidence(originalEvidence.localId, {
-        status: evidence?.status === "uploaded" ? "uploaded" : "error",
-        error: error instanceof Error ? error.message : "UPLOAD_FAILED",
-      });
-      throw error;
     }
-  }
-
-  try {
-    await incidentsService.submit(incident.id);
-  } catch (error) {
     try {
-      const history = await incidentsService.history(incident.id);
-      const wasSubmitted = history.data.items.some(
-        (item) => item.newStatus !== "RECEIVED",
+      const { data } = await incidentsService.submit(
+        incident.id,
+        current.version,
       );
-      if (!wasSubmitted) throw error;
-    } catch {
-      throw error;
+      checkSession();
+      current = { ...current, status: data.status, version: data.version };
+      submittedAt = new Date().toISOString();
+    } catch (error) {
+      const reconciled = await incidentsService
+        .detail(incident.id)
+        .catch(() => null);
+      if (!reconciled?.data.submittedAt) throw error;
+      current = reconciled.data;
+      submittedAt = current.submittedAt;
     }
   }
+  checkSession();
+  if (!submittedAt) throw new Error("La incidencia ya no se puede enviar.");
   const latestDraft = useIncidentDraftStore.getState().draft;
   const record: LocalIncidentRecord = {
     id: incident.id,
     trackingCode: incident.trackingCode,
-    clientRequestId: incident.clientRequestId,
+    clientRequestId: draft.clientRequestId,
     originalMessage: latestDraft.originalMessage,
     address: latestDraft.address,
     addressReference: latestDraft.addressReference,
     latitude: latestDraft.latitude as number,
     longitude: latestDraft.longitude as number,
-    status: "AI_ANALYSIS",
+    status: current.status,
     createdAt: incident.createdAt,
-    submittedAt: new Date().toISOString(),
+    submittedAt,
     evidences: latestDraft.evidences,
   };
   store.completeIncident(record);
@@ -135,6 +122,7 @@ export function useSubmitIncident() {
   return useMutation({
     mutationFn: submitIncidentDraft,
     onSuccess: (incident) => {
+      void queryClient.invalidateQueries({ queryKey: ["incidents", "list"] });
       void queryClient.invalidateQueries({
         queryKey: incidentKeys.history(incident.id),
       });
@@ -163,6 +151,25 @@ export function useIncidentAssignments(id: string | null) {
   return useQuery({
     queryKey: incidentKeys.assignments(id ?? ""),
     queryFn: () => incidentsService.assignments(id as string),
+    enabled: Boolean(id),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useIncidentList() {
+  return useInfiniteQuery({
+    queryKey: ["incidents", "list"],
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) => incidentsService.list(pageParam),
+    getNextPageParam: ({ data: { pagination } }) =>
+      pagination.page < pagination.pages ? pagination.page + 1 : undefined,
+  });
+}
+
+export function useIncidentDetail(id: string | null) {
+  return useQuery({
+    queryKey: ["incidents", id, "detail"],
+    queryFn: () => incidentsService.detail(id as string),
     enabled: Boolean(id),
     refetchInterval: 30_000,
   });

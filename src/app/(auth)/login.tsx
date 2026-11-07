@@ -196,6 +196,15 @@ const LoginPage = () => {
           </View>
         )}
 
+        <Pressable
+          className="mt-5 items-center"
+          onPress={() => router.push("/recover")}
+        >
+          <Text className="font-semibold text-blue-600 dark:text-blue-400">
+            ¿Olvidaste tu contraseña?
+          </Text>
+        </Pressable>
+
         <View className="mt-6 flex-row items-center justify-center gap-1">
           <Text className="text-sm text-gray-500 dark:text-gray-400">
             ¿No tienes una cuenta?

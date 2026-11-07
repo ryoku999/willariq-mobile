@@ -39,9 +39,10 @@ function normalizeNotification(value: unknown): AppNotification {
   const source = value as Record<string, unknown>;
   const type = asString(source.type) as NotificationType;
   const status = asString(source.status) as NotificationStatus;
+  const payload = source.data ?? source.metadata;
   const metadata =
-    source.metadata && typeof source.metadata === "object"
-      ? (source.metadata as Record<string, unknown>)
+    payload && typeof payload === "object"
+      ? (payload as Record<string, unknown>)
       : null;
 
   return {
@@ -103,7 +104,7 @@ class NotificationsService implements NotificationsRepository {
 
   async list(page: number, filters?: NotificationFilters) {
     const { data } = await this.http.get<ApiEnvelope<unknown>>(this.prefix, {
-      params: { page, limit: 20, order: "desc", ...filters },
+      params: { page, limit: 20, unreadOnly: filters?.unreadOnly },
     });
     return { ...data, data: normalizePage(data.data) };
   }

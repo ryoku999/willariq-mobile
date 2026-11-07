@@ -1,10 +1,13 @@
+import { AccountAction } from "@/features/account/AccountAction";
+import { incidentsService } from "@/infrastructure/services/incidents.service";
 import type { IncidentStatus } from "@/core/entities/incidents.entity";
 import {
   useIncidentAssignments,
+  useIncidentDetail,
+  useIncidentList,
   useIncidentEvidence,
   useIncidentHistory,
 } from "@/infrastructure/hooks/use-incidents";
-import { useIncidentDraftStore } from "@/infrastructure/storage/incident-draft-storage";
 import { formatDate } from "@/shared/utils/format-date";
 import {
   BottomSheet,
@@ -14,8 +17,15 @@ import {
   Text as ExpoText,
 } from "@expo/ui";
 import Feather from "@expo/vector-icons/Feather";
-import { useEffect, useState } from "react";
-import { FlatList, Pressable, Text, useColorScheme, View } from "react-native";
+import { useState } from "react";
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 
 const STATUS_LABELS: Record<IncidentStatus, string> = {
   RECEIVED: "Recibida",
@@ -32,28 +42,24 @@ const STATUS_LABELS: Record<IncidentStatus, string> = {
 
 const IncidentsPage = () => {
   const isDark = useColorScheme() === "dark";
-  const incidents = useIncidentDraftStore((state) => state.incidents);
-  const updateIncidentStatus = useIncidentDraftStore(
-    (state) => state.updateIncidentStatus,
-  );
+  const list = useIncidentList();
+  const incidents = list.data?.pages.flatMap((page) => page.data.items) ?? [];
+  const [cancelTarget, setCancelTarget] = useState<{
+    id: string;
+    version: number;
+  } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = incidents.find((incident) => incident.id === selectedId);
+  const detail = useIncidentDetail(selectedId);
+  const selected = detail.data?.data;
   const history = useIncidentHistory(selectedId);
   const assignments = useIncidentAssignments(selectedId);
   const evidence = useIncidentEvidence(selectedId);
   const historyItems = history.data?.data.items ?? [];
   const assignmentItems = assignments.data?.data.items ?? [];
-  const evidenceItems = evidence.data?.data ?? [];
-
-  useEffect(() => {
-    const latestStatus = historyItems.at(-1)?.newStatus;
-    if (selectedId && latestStatus && selected?.status !== latestStatus) {
-      updateIncidentStatus(selectedId, latestStatus);
-    }
-  }, [historyItems, selected?.status, selectedId, updateIncidentStatus]);
-
   const refreshDetails = () => {
     void Promise.all([
+      detail.refetch(),
+      list.refetch(),
       history.refetch(),
       assignments.refetch(),
       evidence.refetch(),
@@ -71,12 +77,17 @@ const IncidentsPage = () => {
         </Text>
         <Text className="mt-2 text-3xl font-bold text-white">Incidencias</Text>
         <Text className="mt-2 text-blue-100">
-          Consulta el estado de los reportes enviados desde este dispositivo.
+          Consulta el estado de los reportes asociados a tu cuenta.
         </Text>
       </View>
 
       <FlatList
         data={incidents}
+        refreshing={list.isRefetching}
+        onRefresh={() => void list.refetch()}
+        onEndReached={() => {
+          if (list.hasNextPage && !list.isFetching) void list.fetchNextPage();
+        }}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}
         renderItem={({ item }) => (
@@ -93,7 +104,7 @@ const IncidentsPage = () => {
                   numberOfLines={2}
                   className="mt-2 text-base leading-6 font-semibold text-gray-900 dark:text-white"
                 >
-                  {item.originalMessage}
+                  {item.address ?? "Incidencia municipal"}
                 </Text>
               </View>
               <Feather
@@ -110,7 +121,7 @@ const IncidentsPage = () => {
                 </Text>
               </View>
               <Text className="text-xs text-gray-400">
-                {formatDate(item.submittedAt)}
+                {formatDate(item.createdAt)}
               </Text>
             </View>
           </Pressable>
@@ -121,7 +132,11 @@ const IncidentsPage = () => {
               <Feather name="clipboard" size={28} color="#2563eb" />
             </View>
             <Text className="mt-5 text-center text-xl font-bold text-gray-900 dark:text-white">
-              Aún no tienes incidencias
+              {list.isPending
+                ? "Cargando incidencias…"
+                : list.isError
+                  ? "No se pudieron cargar las incidencias"
+                  : "Aún no tienes incidencias"}
             </Text>
             <Text className="mt-2 text-center leading-5 text-gray-500 dark:text-gray-400">
               Los reportes que envíes aparecerán aquí para darles seguimiento.
@@ -131,12 +146,19 @@ const IncidentsPage = () => {
       />
 
       <BottomSheet
-        isPresented={Boolean(selected)}
+        isPresented={Boolean(selectedId)}
         onDismiss={() => setSelectedId(null)}
         snapPoints={["half", "full"]}
       >
         <ExpoScrollView>
           <Column spacing={14}>
+            {!selected && (
+              <ExpoText textStyle={sheetText}>
+                {detail.isError
+                  ? "No se pudo cargar la incidencia."
+                  : "Cargando incidencia…"}
+              </ExpoText>
+            )}
             {selected && (
               <>
                 <ExpoText
@@ -165,6 +187,18 @@ const IncidentsPage = () => {
                 <ExpoText textStyle={secondaryText}>
                   {`Dirección: ${selected.address || "No especificada"}`}
                 </ExpoText>
+                {selected.status === "RECEIVED" && (
+                  <Button
+                    label="Cancelar incidencia"
+                    onPress={() => {
+                      setCancelTarget({
+                        id: selected.id,
+                        version: selected.version,
+                      });
+                      setSelectedId(null);
+                    }}
+                  />
+                )}
 
                 <ExpoText
                   textStyle={{
@@ -214,7 +248,7 @@ const IncidentsPage = () => {
                   <Column key={item.id} spacing={2}>
                     <ExpoText textStyle={sheetText}>{item.status}</ExpoText>
                     <ExpoText textStyle={secondaryText}>
-                      {item.areaName ?? item.assigneeName ?? "Área municipal"}
+                      {item.area?.name ?? item.assigneeName ?? "Área municipal"}
                     </ExpoText>
                   </Column>
                 ))}
@@ -229,7 +263,7 @@ const IncidentsPage = () => {
                   Evidencias
                 </ExpoText>
                 <ExpoText textStyle={secondaryText}>
-                  {`${evidenceItems.length} evidencia(s) confirmada(s)`}
+                  {`${evidence.data?.data.pagination.total ?? 0} evidencia(s) confirmada(s)`}
                 </ExpoText>
                 <Button
                   label={
@@ -245,6 +279,48 @@ const IncidentsPage = () => {
           </Column>
         </ExpoScrollView>
       </BottomSheet>
+      <Modal
+        visible={Boolean(cancelTarget)}
+        transparent
+        onRequestClose={() => setCancelTarget(null)}
+      >
+        <View className="flex-1 justify-center bg-black/50 px-6">
+          {cancelTarget && (
+            <AccountAction
+              title="Cancelar incidencia"
+              fields={[{ label: "Motivo" }]}
+              run={async ([reason]) => {
+                try {
+                  await incidentsService.cancel(
+                    cancelTarget.id,
+                    cancelTarget.version,
+                    reason.trim(),
+                  );
+                } catch (error) {
+                  const current = await incidentsService
+                    .detail(cancelTarget.id)
+                    .catch(() => null);
+                  if (current)
+                    setCancelTarget({
+                      id: current.data.id,
+                      version: current.data.version,
+                    });
+                  throw error;
+                }
+                setCancelTarget(null);
+                await list.refetch();
+              }}
+              success="Incidencia cancelada."
+            />
+          )}
+          <Pressable
+            onPress={() => setCancelTarget(null)}
+            className="rounded-xl bg-white p-4"
+          >
+            <Text>Volver</Text>
+          </Pressable>
+        </View>
+      </Modal>
     </View>
   );
 };

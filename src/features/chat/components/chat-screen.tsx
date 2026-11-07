@@ -81,6 +81,7 @@ export default function ChatScreen() {
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(
     null,
   );
+  const [jobError, setJobError] = useState("");
   const [pendingJobId, setPendingJobId] = useState<string | null>(null);
   const sessions = useChatSessions();
   const messages = useChatMessages(selectedSession?.id ?? null);
@@ -115,13 +116,25 @@ export default function ChatScreen() {
 
   useEffect(() => {
     const status = job.data?.data.status.toUpperCase();
-    if (status === "COMPLETED" || status === "FAILED") {
+    if (
+      status === "COMPLETED" ||
+      status === "FAILED" ||
+      status === "CANCELLED"
+    ) {
+      if (status === "FAILED") {
+        setJobError(
+          job.data?.data.errorSummary === "RATE_LIMITED"
+            ? "El servicio alcanzó su límite de solicitudes. Intenta más tarde."
+            : "No se pudo generar la respuesta. Intenta de nuevo.",
+        );
+      }
       setPendingJobId(null);
       void messages.refetch();
     }
-  }, [job.data?.data.status, messages.refetch]);
+  }, [job.data?.data.status, job.data?.data.errorSummary, messages.refetch]);
 
   const startNewChat = () => {
+    setJobError("");
     setSelectedSession(null);
     setDraft("");
     setFailedMessage(null);
@@ -130,6 +143,7 @@ export default function ChatScreen() {
   };
 
   const selectSession = (session: ChatSession) => {
+    setJobError("");
     setSelectedSession(session);
     setFailedMessage(null);
     setPendingJobId(null);
@@ -141,6 +155,8 @@ export default function ChatScreen() {
     const content = (retryMessage?.content ?? draft).trim();
     if (!content || content.length > 4000 || isSending || sessionClosed) return;
 
+    if (pendingJobId) return;
+    setJobError("");
     const clientRequestId =
       retryMessage?.clientRequestId ?? Crypto.randomUUID();
     let session = selectedSession;
@@ -317,6 +333,9 @@ export default function ChatScreen() {
                   isRetrying={isSending}
                 />
               )}
+            {!!jobError && (
+              <Text className="text-red-600 dark:text-red-400">{jobError}</Text>
+            )}
             {pendingJobId && (
               <View className="mb-4 self-start rounded-2xl bg-white px-4 py-3 dark:bg-gray-900">
                 <View className="flex-row items-center gap-2">
@@ -469,10 +488,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             </Text>
             {message.metadata.sources.map((source) => (
               <Text
-                key={`${source.documentId}-${source.title}`}
+                key={`${source.documentId}-${[source.title, ...source.section].join(" · ")}`}
                 className="mt-1 text-xs text-blue-700 dark:text-blue-300"
               >
-                {source.title}
+                {[source.title, ...source.section].join(" · ")}
               </Text>
             ))}
           </View>

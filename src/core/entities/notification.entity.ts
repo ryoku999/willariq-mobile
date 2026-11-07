@@ -10,8 +10,7 @@ export type NotificationType =
   | "GENERAL";
 
 export interface NotificationFilters {
-  status?: NotificationStatus;
-  type?: NotificationType;
+  unreadOnly?: boolean;
 }
 
 export interface AppNotification {

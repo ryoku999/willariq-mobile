@@ -48,6 +48,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@types/react": "~19.2.2",
+    "expo-doctor": "^1.21.6",
     "postcss": "^8.5.26",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",

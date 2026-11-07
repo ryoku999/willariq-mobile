@@ -20,6 +20,7 @@ export interface CreateIncidentRequest {
 }
 
 export interface IncidentCreated {
+  version: number;
   id: string;
   trackingCode: string;
   clientRequestId: string;
@@ -27,25 +28,25 @@ export interface IncidentCreated {
   createdAt: string;
 }
 
-export interface EvidenceUploadRequest {
-  fileName: string;
-  mimeType: string;
-  sizeBytes: number;
-  capturedAt?: string;
+export interface IncidentSummary {
+  id: string;
+  trackingCode: string;
+  version: number;
+  status: IncidentStatus;
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  createdAt: string;
 }
 
-export interface PresignedEvidenceUpload {
-  uploadId: string;
-  method: "POST";
-  url: string;
-  fields: Record<string, string>;
-  expiresAt: string;
-  maxSizeBytes: number;
+export interface IncidentDetail extends IncidentSummary {
+  originalMessage: string;
+  submittedAt: string | null;
 }
 
 export interface IncidentEvidence {
   id: string;
-  uploadId?: string;
+
   fileName?: string;
   originalFileName?: string;
   mimeType?: string;
@@ -64,7 +65,7 @@ export interface IncidentHistoryItem {
 export interface IncidentAssignment {
   id: string;
   status: string;
-  areaName?: string;
+  area?: { name: string; code: string } | null;
   assigneeName?: string;
   createdAt?: string;
   assignedAt?: string;
@@ -85,11 +86,10 @@ export interface PaginatedResult<T> {
 
 export interface IncidentSubmitResult {
   incidentId: string;
-  aiJob: {
-    id: string;
-    status: string;
-    createdAt: string;
-  };
+  trackingCode: string;
+  status: IncidentStatus;
+  version: number;
+  jobId: string | null;
 }
 
 export type EvidenceUploadStatus =

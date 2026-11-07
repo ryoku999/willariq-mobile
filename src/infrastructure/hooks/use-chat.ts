@@ -54,7 +54,11 @@ export function useChatJob(jobId: string | null) {
     enabled: Boolean(jobId),
     refetchInterval: (query) => {
       const status = query.state.data?.data.status.toUpperCase() ?? "";
-      return status === "COMPLETED" || status === "FAILED" ? false : 2_000;
+      return status === "COMPLETED" ||
+        status === "FAILED" ||
+        status === "CANCELLED"
+        ? false
+        : 2_000;
     },
   });
 }

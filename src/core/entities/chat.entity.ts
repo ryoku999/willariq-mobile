@@ -2,6 +2,7 @@ export type ChatRole = "USER" | "ASSISTANT" | "SYSTEM";
 
 export type ChatSource = {
   documentId: string;
+  section: string[];
   title: string;
 };
 
@@ -56,5 +57,6 @@ export type ChatJob = {
   id: string;
   status: string;
   provider: string | null;
+  errorSummary: string | null;
   sources: ChatSource[];
 };

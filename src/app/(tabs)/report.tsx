@@ -25,8 +25,8 @@ import {
 } from "react-native";
 
 const STEPS = ["Descripción", "Ubicación", "Evidencias", "Revisión"];
-const MAX_EVIDENCES = 10;
-const MAX_TOTAL_SIZE = 100 * 1024 * 1024;
+const MAX_EVIDENCES = 5;
+const MAX_TOTAL_SIZE = 25 * 1024 * 1024;
 
 const ReportPage = () => {
   const isDark = useColorScheme() === "dark";
@@ -85,7 +85,7 @@ const ReportPage = () => {
   ) => {
     const remaining = MAX_EVIDENCES - draft.evidences.length;
     if (remaining <= 0) {
-      Alert.alert("Límite alcanzado", "Puedes adjuntar hasta 10 fotografías.");
+      Alert.alert("Límite alcanzado", "Puedes adjuntar hasta 5 fotografías.");
       return;
     }
 
@@ -104,6 +104,10 @@ const ReportPage = () => {
           0,
         );
 
+        if (evidence.sizeBytes > 5 * 1024 * 1024) {
+          deleteIncidentImage(evidence.uri);
+          throw new Error("FILE_SIZE_EXCEEDED");
+        }
         if (currentSize + pendingSize + evidence.sizeBytes > MAX_TOTAL_SIZE) {
           deleteIncidentImage(evidence.uri);
           throw new Error("TOTAL_SIZE_EXCEEDED");
@@ -117,8 +121,10 @@ const ReportPage = () => {
       Alert.alert(
         "No se pudo preparar la foto",
         error instanceof Error && error.message === "TOTAL_SIZE_EXCEEDED"
-          ? "Las evidencias no pueden superar 100 MiB en total."
-          : "Selecciona otra imagen e inténtalo nuevamente.",
+          ? "Las evidencias no pueden superar 25 MiB en total."
+          : error instanceof Error && error.message === "FILE_SIZE_EXCEEDED"
+            ? "Cada imagen debe pesar como máximo 5 MiB."
+            : "Selecciona otra imagen e inténtalo nuevamente.",
       );
     } finally {
       setPreparingImages(false);
@@ -187,7 +193,7 @@ const ReportPage = () => {
   const pickPhotos = async () => {
     const remaining = MAX_EVIDENCES - draft.evidences.length;
     if (remaining <= 0) {
-      Alert.alert("Límite alcanzado", "Puedes adjuntar hasta 10 fotografías.");
+      Alert.alert("Límite alcanzado", "Puedes adjuntar hasta 5 fotografías.");
       return;
     }
 

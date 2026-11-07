@@ -38,6 +38,7 @@ interface IncidentDraftStore {
   setServerIncident: (incident: IncidentDraft["serverIncident"]) => void;
   completeIncident: (incident: LocalIncidentRecord) => void;
   resetDraft: () => void;
+  clearSession: () => void;
   removeIncident: (id: string) => void;
   updateIncidentStatus: (
     id: string,
@@ -94,6 +95,7 @@ export const useIncidentDraftStore = create<IncidentDraftStore>()(
           draft: createDraft(),
         })),
       resetDraft: () => set({ draft: createDraft() }),
+      clearSession: () => set({ draft: createDraft(), incidents: [] }),
       removeIncident: (id) =>
         set((state) => ({
           incidents: state.incidents.filter((incident) => incident.id !== id),

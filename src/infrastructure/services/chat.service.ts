@@ -35,6 +35,11 @@ function normalizeSources(value: unknown) {
     return {
       documentId: asString(source.documentId) || asString(source.id),
       title: asString(source.title) || "Documento municipal",
+      section: Array.isArray(source.section)
+        ? source.section.filter(
+            (part): part is string => typeof part === "string",
+          )
+        : [],
     };
   });
 }
@@ -111,7 +116,7 @@ function normalizeSendResult(value: unknown): SendChatMessageResult {
     assistantMessage: source.assistantMessage
       ? normalizeMessage(source.assistantMessage)
       : null,
-    aiJobId: typeof source.aiJobId === "string" ? source.aiJobId : null,
+    aiJobId: asString(asRecord(source.job).id) || null,
   };
 }
 
@@ -169,7 +174,11 @@ class ChatService implements ChatRepository {
       data: {
         id: asString(source.id),
         status: asString(source.status),
-        provider: typeof source.provider === "string" ? source.provider : null,
+        provider:
+          typeof source.finalProvider === "string"
+            ? source.finalProvider
+            : null,
+        errorSummary: asString(source.errorSummary) || null,
         sources: normalizeSources(source.sources),
       } satisfies ChatJob,
     };
