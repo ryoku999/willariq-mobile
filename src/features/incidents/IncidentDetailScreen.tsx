@@ -1,3 +1,4 @@
+import { useScreenBackground } from "@/shared/hooks/use-screen-background";
 import { queryClient } from "@/config/query/query-client";
 import type { IncidentEvidence } from "@/core/entities/incidents.entity";
 import { AccountAction } from "@/features/account/AccountAction";
@@ -24,6 +25,7 @@ import {
   Text,
   View,
 } from "react-native";
+import PendingState from "@/presentation/components/PendingState";
 import { STATUS_LABELS } from "./status-labels";
 
 const card = "gap-3 rounded-2xl bg-white p-4 dark:bg-gray-900";
@@ -107,11 +109,19 @@ function EvidencePhoto({
 }
 
 export default function IncidentDetailScreen() {
+  const backgroundColor = useScreenBackground();
   const { id } = useLocalSearchParams<{ id: string }>();
   const auth = useAuthStore((state) => state.status);
   if (auth === "anonymous") return <Redirect href="/login" />;
-  if (auth !== "authenticated" || !id) return <ActivityIndicator />;
-  return <IncidentDetailContent key={id} id={id} />;
+  return (
+    <View className="flex-1" style={{ backgroundColor }}>
+      {auth !== "authenticated" || !id ? (
+        <PendingState message="Cargando incidencia…" />
+      ) : (
+        <IncidentDetailContent key={id} id={id} />
+      )}
+    </View>
+  );
 }
 
 function IncidentDetailContent({ id }: { id: string }) {
@@ -141,7 +151,7 @@ function IncidentDetailContent({ id }: { id: string }) {
   }
 
   return (
-    <View className="pt-safe flex-1 bg-gray-50 dark:bg-gray-950">
+    <View className="pt-safe flex-1">
       <View className="border-b border-gray-200 px-4 py-3 dark:border-gray-800">
         <Pressable
           accessibilityRole="button"

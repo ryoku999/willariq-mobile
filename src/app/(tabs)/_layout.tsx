@@ -1,3 +1,4 @@
+import { useScreenBackground } from "@/shared/hooks/use-screen-background";
 import { useAuthStore } from "@/infrastructure/storage/auth-storage";
 import { useUnreadNotifications } from "@/infrastructure/hooks/use-notifications";
 import Feather from "@expo/vector-icons/Feather";
@@ -6,6 +7,7 @@ import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, useColorScheme, View } from "react-native";
 
 const TabLayout = () => {
+  const backgroundColor = useScreenBackground();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const { status } = useAuthStore();
@@ -16,8 +18,11 @@ const TabLayout = () => {
 
   if (status === "hydrating") {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
-        <ActivityIndicator color={`${isDark ? "#111827" : "#ffffff"}`} />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor }}
+      >
+        <ActivityIndicator color={isDark ? "#93c5fd" : "#2563eb"} />
       </View>
     );
   }
@@ -36,6 +41,7 @@ const TabLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
+        sceneStyle: { backgroundColor },
         tabBarActiveTintColor: isDark ? "#93c5fd" : "#2563eb",
         tabBarInactiveTintColor: isDark ? "#9ca3af" : "#6b7280",
         tabBarStyle: {
