@@ -98,7 +98,8 @@ const NotificationsPage = () => {
 
   const openNotification = (notification: AppNotification) => {
     setSelected(notification);
-    if (notification.status !== "READ") markRead.mutate(notification.id);
+    if (!notification.readAt && notification.status !== "READ")
+      markRead.mutate(notification.id);
   };
 
   const loadNextPage = () => {
@@ -252,12 +253,16 @@ function NotificationRow({
 }) {
   const isDark = useColorScheme() === "dark";
   const copy = NOTIFICATION_COPY[item.type];
-  const isUnread = item.status !== "READ";
+  const isUnread = !item.readAt && item.status !== "READ";
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityHint={
+        isUnread ? "Notificación sin leer" : "Notificación leída"
+      }
       onPress={() => onPress(item)}
-      className={`mb-3 flex-row gap-4 rounded-3xl p-4 ${isUnread ? "bg-blue-50 dark:bg-blue-950" : "bg-white dark:bg-gray-900"}`}
+      className={`mb-3 flex-row gap-4 rounded-3xl border p-4 ${isUnread ? "border-blue-300 bg-blue-100 dark:border-blue-700 dark:bg-blue-950" : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900"}`}
     >
       <View
         className={`h-11 w-11 items-center justify-center rounded-2xl ${isUnread ? "bg-blue-600" : "bg-gray-100 dark:bg-gray-800"}`}
@@ -265,7 +270,7 @@ function NotificationRow({
         <Feather
           name={copy.icon}
           size={20}
-          color={isUnread ? "white" : isDark ? "#93c5fd" : "#2563eb"}
+          color={isUnread ? "white" : isDark ? "#9ca3af" : "#6b7280"}
         />
       </View>
       <View className="flex-1">

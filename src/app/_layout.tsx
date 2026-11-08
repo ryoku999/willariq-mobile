@@ -25,6 +25,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="chat" />
+          <Stack.Screen name="incident-detail/[id]" />
         </Stack>
       </KeyboardProvider>
     </QueryClientProvider>

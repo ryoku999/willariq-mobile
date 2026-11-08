@@ -59,11 +59,43 @@ class IncidentsService implements IncidentsRepository {
     return data;
   }
 
-  async listEvidence(incidentId: string) {
+  async listEvidence(incidentId: string, page = 1) {
     const { data } = await this.http.get<
       ApiEnvelope<PaginatedResult<IncidentEvidence>>
-    >(`${this.prefix}/${incidentId}/evidence`);
+    >(`${this.prefix}/${incidentId}/evidence`, { params: { page, limit: 20 } });
     return data;
+  }
+
+  async evidenceImage(
+    incidentId: string,
+    evidenceId: string,
+    signal?: AbortSignal,
+  ) {
+    const response = await this.http.get<ArrayBuffer>(
+      `${this.prefix}/${incidentId}/evidence/${evidenceId}/content`,
+      { responseType: "arraybuffer", signal },
+    );
+    const mime = String(response.headers["content-type"] ?? "").split(";")[0];
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) {
+      throw new Error("Formato de imagen no disponible.");
+    }
+    const bytes = new Uint8Array(response.data);
+    const alphabet =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let encoded = "";
+    for (let index = 0; index < bytes.length; index += 3) {
+      const first = bytes[index];
+      const second = bytes[index + 1] ?? 0;
+      const third = bytes[index + 2] ?? 0;
+      encoded +=
+        alphabet[first >> 2] + alphabet[((first & 3) << 4) | (second >> 4)];
+      encoded +=
+        index + 1 < bytes.length
+          ? alphabet[((second & 15) << 2) | (third >> 6)]
+          : "=";
+      encoded += index + 2 < bytes.length ? alphabet[third & 63] : "=";
+    }
+    return `data:${mime};base64,${encoded}`;
   }
 
   async submit(incidentId: string, expectedVersion: number) {
@@ -82,11 +114,11 @@ class IncidentsService implements IncidentsRepository {
     return data;
   }
 
-  async history(incidentId: string) {
+  async history(incidentId: string, page = 1) {
     const { data } = await this.http.get<
       ApiEnvelope<PaginatedResult<IncidentHistoryItem>>
     >(`${this.prefix}/${incidentId}/history`, {
-      params: { page: 1, limit: 20 },
+      params: { page, limit: 20 },
     });
     return data;
   }

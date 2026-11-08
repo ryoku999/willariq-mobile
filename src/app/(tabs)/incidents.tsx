@@ -1,74 +1,14 @@
-import { AccountAction } from "@/features/account/AccountAction";
-import { incidentsService } from "@/infrastructure/services/incidents.service";
-import type { IncidentStatus } from "@/core/entities/incidents.entity";
-import {
-  useIncidentAssignments,
-  useIncidentDetail,
-  useIncidentList,
-  useIncidentEvidence,
-  useIncidentHistory,
-} from "@/infrastructure/hooks/use-incidents";
+import { STATUS_LABELS } from "@/features/incidents/status-labels";
+import { useIncidentList } from "@/infrastructure/hooks/use-incidents";
 import { formatDate } from "@/shared/utils/format-date";
-import {
-  BottomSheet,
-  Button,
-  Column,
-  ScrollView as ExpoScrollView,
-  Text as ExpoText,
-} from "@expo/ui";
 import Feather from "@expo/vector-icons/Feather";
-import { useState } from "react";
-import {
-  FlatList,
-  Modal,
-  Pressable,
-  Text,
-  useColorScheme,
-  View,
-} from "react-native";
-
-const STATUS_LABELS: Record<IncidentStatus, string> = {
-  RECEIVED: "Recibida",
-  AI_ANALYSIS: "En análisis",
-  IN_REVIEW: "En revisión",
-  ACCEPTED: "Aceptada",
-  ASSIGNED: "Asignada",
-  IN_PROGRESS: "En atención",
-  RESOLVED: "Resuelta",
-  REJECTED: "Rechazada",
-  CLOSED: "Cerrada",
-  CANCELLED: "Cancelada",
-};
+import { router } from "expo-router";
+import { FlatList, Pressable, Text, useColorScheme, View } from "react-native";
 
 const IncidentsPage = () => {
   const isDark = useColorScheme() === "dark";
   const list = useIncidentList();
   const incidents = list.data?.pages.flatMap((page) => page.data.items) ?? [];
-  const [cancelTarget, setCancelTarget] = useState<{
-    id: string;
-    version: number;
-  } | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const detail = useIncidentDetail(selectedId);
-  const selected = detail.data?.data;
-  const history = useIncidentHistory(selectedId);
-  const assignments = useIncidentAssignments(selectedId);
-  const evidence = useIncidentEvidence(selectedId);
-  const historyItems = history.data?.data.items ?? [];
-  const assignmentItems = assignments.data?.data.items ?? [];
-  const refreshDetails = () => {
-    void Promise.all([
-      detail.refetch(),
-      list.refetch(),
-      history.refetch(),
-      assignments.refetch(),
-      evidence.refetch(),
-    ]);
-  };
-
-  const sheetText = { color: isDark ? "#e5e7eb" : "#1f2937" };
-  const secondaryText = { color: isDark ? "#9ca3af" : "#6b7280" };
-
   return (
     <View className="flex-1 bg-gray-50 dark:bg-gray-950">
       <View className="pt-safe overflow-hidden bg-blue-600 px-6 pb-8 dark:bg-blue-950">
@@ -92,7 +32,12 @@ const IncidentsPage = () => {
         contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => setSelectedId(item.id)}
+            onPress={() =>
+              router.push({
+                pathname: "/incident-detail/[id]",
+                params: { id: item.id },
+              })
+            }
             className="mb-4 rounded-3xl bg-white p-5 dark:bg-gray-900"
           >
             <View className="flex-row items-start justify-between gap-4">
@@ -108,7 +53,7 @@ const IncidentsPage = () => {
                 </Text>
               </View>
               <Feather
-                name="chevron-up"
+                name="chevron-right"
                 size={20}
                 color={isDark ? "#9ca3af" : "#6b7280"}
               />
@@ -144,183 +89,6 @@ const IncidentsPage = () => {
           </View>
         }
       />
-
-      <BottomSheet
-        isPresented={Boolean(selectedId)}
-        onDismiss={() => setSelectedId(null)}
-        snapPoints={["half", "full"]}
-      >
-        <ExpoScrollView>
-          <Column spacing={14}>
-            {!selected && (
-              <ExpoText textStyle={sheetText}>
-                {detail.isError
-                  ? "No se pudo cargar la incidencia."
-                  : "Cargando incidencia…"}
-              </ExpoText>
-            )}
-            {selected && (
-              <>
-                <ExpoText
-                  textStyle={{
-                    ...sheetText,
-                    fontSize: 22,
-                    fontWeight: "700",
-                  }}
-                >
-                  {selected.trackingCode}
-                </ExpoText>
-                <ExpoText textStyle={secondaryText}>
-                  {selected.originalMessage}
-                </ExpoText>
-                <ExpoText
-                  textStyle={{
-                    color: isDark ? "#93c5fd" : "#1d4ed8",
-                    fontWeight: "700",
-                  }}
-                >
-                  {`Estado: ${STATUS_LABELS[selected.status]}`}
-                </ExpoText>
-                <ExpoText textStyle={secondaryText}>
-                  {`Ubicación: ${selected.latitude.toFixed(6)}, ${selected.longitude.toFixed(6)}`}
-                </ExpoText>
-                <ExpoText textStyle={secondaryText}>
-                  {`Dirección: ${selected.address || "No especificada"}`}
-                </ExpoText>
-                {selected.status === "RECEIVED" && (
-                  <Button
-                    label="Cancelar incidencia"
-                    onPress={() => {
-                      setCancelTarget({
-                        id: selected.id,
-                        version: selected.version,
-                      });
-                      setSelectedId(null);
-                    }}
-                  />
-                )}
-
-                <ExpoText
-                  textStyle={{
-                    ...sheetText,
-                    fontSize: 17,
-                    fontWeight: "700",
-                  }}
-                >
-                  Historial
-                </ExpoText>
-                {history.isLoading && (
-                  <ExpoText textStyle={secondaryText}>
-                    Cargando historial...
-                  </ExpoText>
-                )}
-                {historyItems.length === 0 && !history.isLoading && (
-                  <ExpoText textStyle={secondaryText}>
-                    Todavía no hay cambios de estado registrados.
-                  </ExpoText>
-                )}
-                {historyItems.map((item) => (
-                  <Column key={item.id} spacing={2}>
-                    <ExpoText textStyle={sheetText}>
-                      {STATUS_LABELS[item.newStatus]}
-                    </ExpoText>
-                    <ExpoText textStyle={secondaryText}>
-                      {formatDate(item.createdAt)}
-                    </ExpoText>
-                  </Column>
-                ))}
-
-                <ExpoText
-                  textStyle={{
-                    ...sheetText,
-                    fontSize: 17,
-                    fontWeight: "700",
-                  }}
-                >
-                  Asignaciones
-                </ExpoText>
-                {assignmentItems.length === 0 && (
-                  <ExpoText textStyle={secondaryText}>
-                    La incidencia aún no ha sido asignada.
-                  </ExpoText>
-                )}
-                {assignmentItems.map((item) => (
-                  <Column key={item.id} spacing={2}>
-                    <ExpoText textStyle={sheetText}>{item.status}</ExpoText>
-                    <ExpoText textStyle={secondaryText}>
-                      {item.area?.name ?? item.assigneeName ?? "Área municipal"}
-                    </ExpoText>
-                  </Column>
-                ))}
-
-                <ExpoText
-                  textStyle={{
-                    ...sheetText,
-                    fontSize: 17,
-                    fontWeight: "700",
-                  }}
-                >
-                  Evidencias
-                </ExpoText>
-                <ExpoText textStyle={secondaryText}>
-                  {`${evidence.data?.data.pagination.total ?? 0} evidencia(s) confirmada(s)`}
-                </ExpoText>
-                <Button
-                  label={
-                    history.isFetching || assignments.isFetching
-                      ? "Actualizando..."
-                      : "Actualizar seguimiento"
-                  }
-                  onPress={refreshDetails}
-                  disabled={history.isFetching || assignments.isFetching}
-                />
-              </>
-            )}
-          </Column>
-        </ExpoScrollView>
-      </BottomSheet>
-      <Modal
-        visible={Boolean(cancelTarget)}
-        transparent
-        onRequestClose={() => setCancelTarget(null)}
-      >
-        <View className="flex-1 justify-center bg-black/50 px-6">
-          {cancelTarget && (
-            <AccountAction
-              title="Cancelar incidencia"
-              fields={[{ label: "Motivo" }]}
-              run={async ([reason]) => {
-                try {
-                  await incidentsService.cancel(
-                    cancelTarget.id,
-                    cancelTarget.version,
-                    reason.trim(),
-                  );
-                } catch (error) {
-                  const current = await incidentsService
-                    .detail(cancelTarget.id)
-                    .catch(() => null);
-                  if (current)
-                    setCancelTarget({
-                      id: current.data.id,
-                      version: current.data.version,
-                    });
-                  throw error;
-                }
-                setCancelTarget(null);
-                await list.refetch();
-              }}
-              success="Incidencia cancelada."
-            />
-          )}
-          <Pressable
-            onPress={() => setCancelTarget(null)}
-            className="rounded-xl bg-white p-4"
-          >
-            <Text>Volver</Text>
-          </Pressable>
-        </View>
-      </Modal>
     </View>
   );
 };

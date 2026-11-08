@@ -1,3 +1,5 @@
+import { STATUS_LABELS } from "@/features/incidents/status-labels";
+import type { IncidentStatus } from "@/core/entities/incidents.entity";
 import { api } from "@/config/http/http-client";
 import { NotificationsRepository } from "@/core/contracts/notifications.repository";
 import {
@@ -31,6 +33,16 @@ function asString(value: unknown) {
   return typeof value === "string" ? value : "";
 }
 
+function localizeIncidentStatus(message: string) {
+  return message.replace(
+    /\b(se encuentra en|tiene el estado) ([A-Z_]+)\b/g,
+    (original: string, _phrase: string, status: string) =>
+      Object.hasOwn(STATUS_LABELS, status)
+        ? `está ${STATUS_LABELS[status as IncidentStatus].toLocaleLowerCase("es-PE")}`
+        : original,
+  );
+}
+
 function normalizeNotification(value: unknown): AppNotification {
   if (!value || typeof value !== "object") {
     throw new Error("NOTIFICATION_RESPONSE_INVALID");
@@ -51,10 +63,11 @@ function normalizeNotification(value: unknown): AppNotification {
     status: NOTIFICATION_STATUSES.includes(status) ? status : "SENT",
     // The backend DTO may expose message, body, or content. Normalize it here.
     title: asString(source.title),
-    message:
+    message: localizeIncidentStatus(
       asString(source.message) ||
-      asString(source.body) ||
-      asString(source.content),
+        asString(source.body) ||
+        asString(source.content),
+    ),
     metadata,
     createdAt: asString(source.createdAt),
     readAt: typeof source.readAt === "string" ? source.readAt : null,

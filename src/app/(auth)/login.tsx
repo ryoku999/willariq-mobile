@@ -38,7 +38,6 @@ const LoginPage = () => {
     setApiErrors([]);
     login.mutate(values, {
       onError: (err) => {
-        console.error("Error al iniciar sesión:", err);
         setApiErrors(getApiErrorMessages(err));
       },
     });

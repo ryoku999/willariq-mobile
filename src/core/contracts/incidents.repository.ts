@@ -28,7 +28,14 @@ export interface IncidentsRepository {
 
   listEvidence(
     incidentId: string,
+    page?: number,
   ): Promise<ApiEnvelope<PaginatedResult<IncidentEvidence>>>;
+
+  evidenceImage(
+    incidentId: string,
+    evidenceId: string,
+    signal?: AbortSignal,
+  ): Promise<string>;
 
   submit(
     incidentId: string,
@@ -43,6 +50,7 @@ export interface IncidentsRepository {
 
   history(
     incidentId: string,
+    page?: number,
   ): Promise<ApiEnvelope<PaginatedResult<IncidentHistoryItem>>>;
 
   assignments(

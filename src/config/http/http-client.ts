@@ -157,7 +157,9 @@ api.interceptors.response.use(
       if (
         req.sessionVersion === getSessionVersion() &&
         axios.isAxiosError(refreshError) &&
-        refreshError.response?.status === 401
+        (refreshError.response?.status === 401 ||
+          (refreshError.response?.status === 403 &&
+            refreshError.response.data?.code === "AUTH_CHANNEL_ROLE_FORBIDDEN"))
       ) {
         await endSession();
       }

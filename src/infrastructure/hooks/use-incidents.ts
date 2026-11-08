@@ -130,20 +130,47 @@ export function useSubmitIncident() {
   });
 }
 
+function nextPage({
+  data: { pagination },
+}: {
+  data: { pagination: { page: number; pages: number } };
+}) {
+  return pagination.page < pagination.pages ? pagination.page + 1 : undefined;
+}
+
 export function useIncidentHistory(id: string | null) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: incidentKeys.history(id ?? ""),
-    queryFn: () => incidentsService.history(id as string),
+    queryFn: ({ pageParam }) =>
+      incidentsService.history(id as string, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: nextPage,
     enabled: Boolean(id),
-    refetchInterval: 30_000,
   });
 }
 
 export function useIncidentEvidence(id: string | null) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: incidentKeys.evidence(id ?? ""),
-    queryFn: () => incidentsService.listEvidence(id as string),
+    queryFn: ({ pageParam }) =>
+      incidentsService.listEvidence(id as string, pageParam),
+    initialPageParam: 1,
+    getNextPageParam: nextPage,
     enabled: Boolean(id),
+  });
+}
+
+export function useIncidentEvidenceImage(
+  incidentId: string,
+  evidenceId: string,
+) {
+  return useQuery({
+    queryKey: ["incident-image", incidentId, evidenceId],
+    queryFn: ({ signal }) =>
+      incidentsService.evidenceImage(incidentId, evidenceId, signal),
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: false,
   });
 }
 
