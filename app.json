@@ -44,7 +44,10 @@
         {
           "locationWhenInUsePermission": "Permite que Willariq obtenga la ubicación de la incidencia."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
