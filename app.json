@@ -25,9 +25,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#10263C",
+          "image": "./assets/images/willariq-adaptive-icon.png",
+          "imageWidth": 200
         }
       ],
       "expo-secure-store",
