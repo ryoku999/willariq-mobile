@@ -23,5 +23,5 @@ export interface ChatRepository {
     request: SendChatMessageRequest,
   ): Promise<ApiEnvelope<SendChatMessageResult>>;
   getJob(id: string): Promise<ApiEnvelope<ChatJob>>;
-  closeSession(id: string): Promise<void>;
+  closeSession(id: string): Promise<ChatSession>;
 }

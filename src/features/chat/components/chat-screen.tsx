@@ -89,8 +89,16 @@ export default function ChatScreen() {
   const sendMessage = useSendChatMessage();
   const closeSession = useCloseChatSession();
   const job = useChatJob(pendingJobId);
-  const items = messages.data?.pages.flatMap((page) => page.data.items) ?? [];
+  // The API paginates newest first; reverse the entire loaded conversation.
+  const newestFirst =
+    messages.data?.pages.flatMap((page) => page.data.items) ?? [];
+  const items = [
+    ...new Map(newestFirst.map((message) => [message.id, message])).values(),
+  ].reverse();
+  const latestMessageId = items.at(-1)?.id;
   const sessionClosed = isClosed(selectedSession);
+  const closing =
+    closeSession.isPending && closeSession.variables === selectedSession?.id;
   const isSending = createSession.isPending || sendMessage.isPending;
 
   useFocusEffect(
@@ -108,13 +116,19 @@ export default function ChatScreen() {
   );
 
   useEffect(() => {
-    if (!items.length) return;
+    if (!latestMessageId) return;
     requestAnimationFrame(() =>
       scrollRef.current?.scrollToEnd({ animated: true }),
     );
-  }, [items.length, pendingJobId]);
+  }, [latestMessageId, pendingJobId]);
 
   useEffect(() => {
+    if (sessionClosed) {
+      setPendingJobId(null);
+      setFailedMessage(null);
+      setJobError("");
+      return;
+    }
     const status = job.data?.data.status.toUpperCase();
     if (
       status === "COMPLETED" ||
@@ -131,7 +145,12 @@ export default function ChatScreen() {
       setPendingJobId(null);
       void messages.refetch();
     }
-  }, [job.data?.data.status, job.data?.data.errorSummary, messages.refetch]);
+  }, [
+    sessionClosed,
+    job.data?.data.status,
+    job.data?.data.errorSummary,
+    messages.refetch,
+  ]);
 
   const startNewChat = () => {
     setJobError("");
@@ -153,7 +172,14 @@ export default function ChatScreen() {
   const submit = async (retry = false) => {
     const retryMessage = retry ? failedMessage : null;
     const content = (retryMessage?.content ?? draft).trim();
-    if (!content || content.length > 4000 || isSending || sessionClosed) return;
+    if (
+      !content ||
+      content.length > 4000 ||
+      isSending ||
+      sessionClosed ||
+      closing
+    )
+      return;
 
     if (pendingJobId) return;
     setJobError("");
@@ -191,7 +217,8 @@ export default function ChatScreen() {
   };
 
   const confirmClose = () => {
-    if (!selectedSession || sessionClosed) return;
+    if (!selectedSession || sessionClosed || closing) return;
+    const sessionId = selectedSession.id;
     Alert.alert(
       "Cerrar conversación",
       "No podrás enviar más mensajes en esta conversación.",
@@ -201,16 +228,17 @@ export default function ChatScreen() {
           text: "Cerrar",
           style: "destructive",
           onPress: () => {
-            closeSession.mutate(selectedSession.id, {
-              onSuccess: () => {
+            closeSession.mutate(sessionId, {
+              onSuccess: (closed) => {
                 setSelectedSession((current) =>
-                  current
-                    ? {
-                        ...current,
-                        status: "CLOSED",
-                        closedAt: new Date().toISOString(),
-                      }
-                    : current,
+                  current?.id === sessionId ? closed : current,
+                );
+                void messages.refetch();
+              },
+              onError: (error) => {
+                Alert.alert(
+                  "No se pudo cerrar la conversación",
+                  chatErrorMessage(error),
                 );
               },
             });
@@ -284,6 +312,7 @@ export default function ChatScreen() {
           scrollRef.current = node;
         }}
         keyboardLiftBehavior="whenAtEnd"
+        maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingTop: 24,
@@ -357,7 +386,7 @@ export default function ChatScreen() {
           value={draft}
           onChangeText={setDraft}
           onSend={() => void submit()}
-          disabled={isSending || sessionClosed}
+          disabled={isSending || sessionClosed || closing}
           isSending={isSending}
           closed={sessionClosed}
         />

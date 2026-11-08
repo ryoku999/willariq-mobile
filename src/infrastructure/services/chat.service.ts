@@ -185,7 +185,11 @@ class ChatService implements ChatRepository {
   }
 
   async closeSession(id: string) {
-    await this.http.post(`${this.prefix}/sessions/${id}/close`);
+    const { data } = await this.http.post<ApiEnvelope<unknown>>(
+      `${this.prefix}/sessions/${id}/close`,
+      {},
+    );
+    return normalizeSession(data.data);
   }
 }
 
