@@ -1,6 +1,7 @@
 import { queryClient } from "@/config/query/query-client";
 import { router } from "expo-router";
 import { useAuthStore } from "../storage/auth-storage";
+import { useIncidentDraftStore } from "../storage/incident-draft-storage";
 import { tokenStorage } from "../storage/toke-storage";
 
 let sessionVersion = 0;
@@ -16,6 +17,7 @@ export const endSession = (): Promise<void> => {
     await tokenStorage.clearTokens();
     useAuthStore.getState().setAnonymous();
     queryClient.clear();
+    useIncidentDraftStore.getState().clearSession();
     router.replace("/login");
   })().finally(() => {
     endingSession = null;

@@ -1,4 +1,4 @@
-import { LoginReq } from "@/core/entities/auth.entity";
+import { LoginReq, UserCreateReq } from "@/core/entities/auth.entity";
 import { endSession } from "@/infrastructure/auth/auth-session";
 import { useMutation } from "@tanstack/react-query";
 import { authService } from "../services/auth.service";
@@ -33,5 +33,12 @@ export const useLogout = () => {
         });
       }
     },
+  });
+};
+
+export const useCreateUser = () => {
+  return useMutation({
+    mutationKey: ["user", "create"],
+    mutationFn: (dto: UserCreateReq) => authService.createUser(dto),
   });
 };

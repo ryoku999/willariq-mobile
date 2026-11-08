@@ -1,3 +1,6 @@
+import { AccountAction } from "@/features/account/AccountAction";
+import { accountService } from "@/infrastructure/services/account.service";
+import { endSession } from "@/infrastructure/auth/auth-session";
 import Feather from "@expo/vector-icons/Feather";
 import LogoutButton from "@/features/auth/components/LogoutButton";
 import { useMe } from "@/infrastructure/hooks/use-users";
@@ -103,6 +106,73 @@ const ProfilePage = () => {
           <Text className="mb-3 text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
             CUENTA
           </Text>
+          <AccountAction
+            title="Editar perfil"
+            fields={[
+              { label: "Nombres", initial: data.firstName },
+              { label: "Apellidos", initial: data.lastName },
+              { label: "Teléfono", initial: data.phone },
+            ]}
+            run={async ([firstName, lastName, phone]) => {
+              await accountService.update({
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                phone: phone.trim(),
+              });
+              await me.refetch();
+            }}
+            success="Perfil actualizado."
+          />
+          <AccountAction
+            title="Actualizar correo"
+            fields={[
+              { label: "Correo", initial: data.email ?? "" },
+              { label: "Contraseña actual", secret: true },
+            ]}
+            run={async ([email, password]) => {
+              await accountService.setEmail(email.trim(), password);
+              await me.refetch();
+            }}
+            success="Correo actualizado."
+          />
+          {!!data.email && !data.emailVerifiedAt && (
+            <>
+              <AccountAction
+                title="Solicitar código de verificación"
+                run={accountService.requestVerification}
+                success="Revisa tu correo."
+              />
+              <AccountAction
+                title="Verificar correo"
+                fields={[{ label: "Código del enlace" }]}
+                run={async ([token]) => {
+                  await accountService.confirmEmail(token.trim());
+                  await me.refetch();
+                }}
+                success="Correo verificado."
+              />
+            </>
+          )}
+          <AccountAction
+            title="Cambiar contraseña"
+            fields={[
+              { label: "Contraseña actual", secret: true },
+              { label: "Nueva contraseña", secret: true },
+            ]}
+            run={async ([current, next]) => {
+              await accountService.changePassword(current, next);
+              await endSession();
+            }}
+            success="Contraseña actualizada."
+          />
+          <AccountAction
+            title="Cerrar todas las sesiones"
+            run={async () => {
+              await accountService.logoutAll();
+              await endSession();
+            }}
+            success="Sesiones cerradas."
+          />
           <LogoutButton />
         </View>
       </View>

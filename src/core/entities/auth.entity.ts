@@ -8,31 +8,21 @@ export interface LoginReq {
 export type UserRole = "CITIZEN";
 
 export interface LoginRes {
-  success: boolean;
-  path: string;
-  data: Data;
-}
-
-export interface Data {
-  tokens: Tokens;
-  user: User;
-}
-
-export interface Tokens {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface User {
-  dni: string;
-  email: string | null;
-  emailVerifiedAt: string | null;
-  firstName: string;
-  id: string;
-  lastName: string;
-  phone: string;
-  role: UserRole;
-  status: string;
+  tokens: {
+    accessToken: string;
+    refreshToken: string;
+  };
+  user: {
+    dni: string;
+    email: string | null;
+    emailVerifiedAt: string | null;
+    firstName: string;
+    id: string;
+    lastName: string;
+    phone: string;
+    role: UserRole;
+    status: string;
+  };
 }
 
 // logout request
@@ -42,9 +32,28 @@ export interface LogoutReq {
 
 // logout response
 export interface LogoutRes {
-  success: boolean;
-  path: string;
-  data: {
-    message: string;
-  };
+  message: string;
+}
+
+// user create request
+export interface UserCreateReq {
+  firstName: string;
+  dni: string;
+  phone: string;
+  password: string;
+  lastName: string | null;
+}
+
+export interface UserCreateRes {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  dni: string;
+  email: string | null;
+  emailVerifiedAt: string | null;
+  role: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }

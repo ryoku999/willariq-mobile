@@ -18,10 +18,14 @@ const PUBLIC_AUTH_ROUTES = [
   "/auth/register",
   "/auth/mobile/refresh",
   "/auth/mobile/logout",
+  "/auth/password/forgot",
+  "/auth/password/reset",
+  "/users/email-verifications/confirm",
 ];
 
 export const api: AxiosInstance = axios.create({
   baseURL,
+  timeout: 30_000,
 });
 
 const refreshApi: AxiosInstance = axios.create({
@@ -34,7 +38,7 @@ interface RefreshTokenRes {
   refreshToken: string;
 }
 
-let refreshPromise: Promise<AuthTokens> | null = null;
+let refresh: { version: number; promise: Promise<AuthTokens> } | null = null;
 
 async function refreshAccessToken(): Promise<AuthTokens> {
   const sessionVersion = getSessionVersion();
@@ -55,23 +59,31 @@ async function refreshAccessToken(): Promise<AuthTokens> {
     throw new Error("SESSION_ENDED");
   }
 
-  await tokenStorage.setTokens(nextTokens);
+  await tokenStorage.setTokens(
+    nextTokens,
+    () => sessionVersion === getSessionVersion(),
+  );
   return nextTokens;
 }
 
 function getRefreshedTokens(): Promise<AuthTokens> {
-  if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => {
-      refreshPromise = null;
-    });
-  }
-
-  return refreshPromise;
+  const version = getSessionVersion();
+  if (refresh?.version === version) return refresh.promise;
+  const promise = refreshAccessToken().finally(() => {
+    if (refresh?.promise === promise) refresh = null;
+  });
+  refresh = { version, promise };
+  return promise;
 }
 
 api.interceptors.request.use(async (config) => {
+  const request = config as RetryableRequestConfig;
+  request.sessionVersion ??= getSessionVersion();
   const tokens = await tokenStorage.getTokens();
-  if (tokens) config.headers.Authorization = `Bearer ${tokens.accessToken}`;
+  if (request.sessionVersion !== getSessionVersion())
+    throw new Error("SESSION_ENDED");
+  if (tokens && !isPublicAuthRoute(config.url))
+    config.headers.Authorization = `Bearer ${tokens.accessToken}`;
   return config;
 });
 
@@ -82,6 +94,7 @@ interface AuthErrorResponse {
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
+  sessionVersion?: number;
 }
 
 const isAuthErrorResponse = (data: unknown): data is AuthErrorResponse => {
@@ -109,6 +122,7 @@ api.interceptors.response.use(
     if (
       error.response?.status !== 401 ||
       !req ||
+      req.sessionVersion !== getSessionVersion() ||
       isPublicAuthRoute(req.url) ||
       !isAuthErrorResponse(error.response.data)
     ) {
@@ -128,11 +142,27 @@ api.interceptors.response.use(
     req._retry = true;
 
     try {
-      const tokens = await getRefreshedTokens();
+      const current = await tokenStorage.getTokens();
+      if (req.sessionVersion !== getSessionVersion())
+        return Promise.reject(error);
+      const tokens =
+        current && req.headers.Authorization !== `Bearer ${current.accessToken}`
+          ? current
+          : await getRefreshedTokens();
+      if (req.sessionVersion !== getSessionVersion())
+        return Promise.reject(error);
       req.headers.Authorization = `Bearer ${tokens.accessToken}`;
       return api(req);
     } catch (refreshError) {
-      await endSession();
+      if (
+        req.sessionVersion === getSessionVersion() &&
+        axios.isAxiosError(refreshError) &&
+        (refreshError.response?.status === 401 ||
+          (refreshError.response?.status === 403 &&
+            refreshError.response.data?.code === "AUTH_CHANNEL_ROLE_FORBIDDEN"))
+      ) {
+        await endSession();
+      }
       return Promise.reject(refreshError);
     }
   },
