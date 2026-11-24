@@ -106,10 +106,6 @@ const ReportPage = () => {
           0,
         );
 
-        if (evidence.sizeBytes > 5 * 1024 * 1024) {
-          deleteIncidentImage(evidence.uri);
-          throw new Error("FILE_SIZE_EXCEEDED");
-        }
         if (currentSize + pendingSize + evidence.sizeBytes > MAX_TOTAL_SIZE) {
           deleteIncidentImage(evidence.uri);
           throw new Error("TOTAL_SIZE_EXCEEDED");
