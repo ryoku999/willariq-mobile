@@ -5,7 +5,6 @@ import type {
 } from "@/core/entities/incidents.entity";
 import { AccountAction } from "@/features/account/AccountAction";
 import {
-  useIncidentAssignments,
   useIncidentDetail,
   useIncidentEvidence,
   useIncidentEvidenceImage,
@@ -43,6 +42,7 @@ const statusTone: Record<
 > = {
   RECEIVED: "blue",
   AI_ANALYSIS: "amber",
+  NEW: "blue",
   IN_REVIEW: "amber",
   ACCEPTED: "blue",
   ASSIGNED: "blue",
@@ -66,15 +66,6 @@ const statusStyle = {
     foreground: string;
   }
 >;
-const assignmentLabels: Record<string, string> = {
-  ASSIGNED: "Asignada",
-  ACCEPTED: "Aceptada",
-  IN_PROGRESS: "En atención",
-  COMPLETED: "Completada",
-  CANCELLED: "Cancelada",
-  REASSIGNED: "Reasignada",
-};
-
 function EvidencePhoto({
   id,
   evidence,
@@ -191,7 +182,6 @@ function IncidentDetailContent({ id }: { id: string }) {
   const accent = isDark ? "#93c5fd" : "#1d4ed8";
   const detail = useIncidentDetail(id);
   const history = useIncidentHistory(id);
-  const assignments = useIncidentAssignments(id);
   const evidence = useIncidentEvidence(id);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -212,7 +202,6 @@ function IncidentDetailContent({ id }: { id: string }) {
       await Promise.all([
         detail.refetch(),
         history.refetch(),
-        assignments.refetch(),
         evidence.refetch(),
       ]);
     } finally {
@@ -410,38 +399,16 @@ function IncidentDetailContent({ id }: { id: string }) {
                 </View>
               </DetailSection>
 
-              <DetailSection title="Asignaciones" icon="users">
-                {assignments.isPending && (
-                  <ActivityIndicator
-                    accessibilityLabel="Cargando asignaciones"
-                    color={accent}
-                  />
-                )}
-                {assignments.isError && (
-                  <DetailAction
-                    label="Reintentar asignaciones"
-                    onPress={() => void assignments.refetch()}
-                    disabled={assignments.isFetching}
-                  />
-                )}
-                {assignments.isSuccess &&
-                  !assignments.data.data.items.length && (
-                    <Text className={muted}>Todavía no hay asignaciones.</Text>
-                  )}
-                {assignments.data?.data.items.map((item) => (
-                  <View
-                    key={item.id}
-                    className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800"
-                  >
-                    <Text className={body}>
-                      {item.area?.name ?? "Área municipal"}
-                    </Text>
-                    <Text className={muted}>
-                      {assignmentLabels[item.status] ?? "Estado sin registrar"}
-                    </Text>
-                  </View>
-                ))}
-              </DetailSection>
+              {!!incident.resolutionSummary && (
+                <DetailSection title="Resultado de la atención" icon="info">
+                  <Text className={muted}>{incident.resolutionSummary}</Text>
+                </DetailSection>
+              )}
+              {!!incident.cancellationReason && (
+                <DetailSection title="Motivo de cancelación" icon="info">
+                  <Text className={muted}>{incident.cancellationReason}</Text>
+                </DetailSection>
+              )}
               {incident.status === "RECEIVED" && (
                 <AccountAction
                   title="Cancelar incidencia"

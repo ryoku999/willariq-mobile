@@ -12,7 +12,6 @@ import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 export const incidentKeys = {
   history: (id: string) => ["incidents", id, "history"] as const,
   evidence: (id: string) => ["incidents", id, "evidence"] as const,
-  assignments: (id: string) => ["incidents", id, "assignments"] as const,
 };
 
 async function submitIncidentDraft(draft: IncidentDraft) {
@@ -171,15 +170,6 @@ export function useIncidentEvidenceImage(
     staleTime: Infinity,
     gcTime: 0,
     retry: false,
-  });
-}
-
-export function useIncidentAssignments(id: string | null) {
-  return useQuery({
-    queryKey: incidentKeys.assignments(id ?? ""),
-    queryFn: () => incidentsService.assignments(id as string),
-    enabled: Boolean(id),
-    refetchInterval: 30_000,
   });
 }
 

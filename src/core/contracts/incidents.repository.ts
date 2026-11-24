@@ -1,6 +1,5 @@
 import {
   CreateIncidentRequest,
-  IncidentAssignment,
   IncidentCreated,
   IncidentDetail,
   IncidentEvidence,
@@ -53,7 +52,4 @@ export interface IncidentsRepository {
     page?: number,
   ): Promise<ApiEnvelope<PaginatedResult<IncidentHistoryItem>>>;
 
-  assignments(
-    incidentId: string,
-  ): Promise<ApiEnvelope<PaginatedResult<IncidentAssignment>>>;
 }

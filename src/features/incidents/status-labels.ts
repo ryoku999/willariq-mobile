@@ -3,6 +3,7 @@ import type { IncidentStatus } from "@/core/entities/incidents.entity";
 export const STATUS_LABELS: Record<IncidentStatus, string> = {
   RECEIVED: "Recibida",
   AI_ANALYSIS: "En análisis",
+  NEW: "Recibida por Serenazgo",
   IN_REVIEW: "En revisión",
   ACCEPTED: "Aceptada",
   ASSIGNED: "Asignada",

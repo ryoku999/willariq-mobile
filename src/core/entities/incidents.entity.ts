@@ -2,6 +2,7 @@ export type IncidentStatus =
   | "RECEIVED"
   | "AI_ANALYSIS"
   | "IN_REVIEW"
+  | "NEW"
   | "ACCEPTED"
   | "ASSIGNED"
   | "IN_PROGRESS"
@@ -42,6 +43,8 @@ export interface IncidentSummary {
 export interface IncidentDetail extends IncidentSummary {
   originalMessage: string;
   submittedAt: string | null;
+  resolutionSummary: string | null;
+  cancellationReason: string | null;
 }
 
 export interface IncidentEvidence {
@@ -60,16 +63,6 @@ export interface IncidentHistoryItem {
   previousStatus: IncidentStatus | null;
   newStatus: IncidentStatus;
   createdAt: string;
-}
-
-export interface IncidentAssignment {
-  id: string;
-  status: string;
-  area?: { name: string; code: string } | null;
-  assigneeName?: string;
-  createdAt?: string;
-  assignedAt?: string;
-  updatedAt?: string;
 }
 
 export interface Pagination {

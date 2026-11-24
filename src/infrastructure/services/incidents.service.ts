@@ -5,7 +5,6 @@ import {
   IncidentSummary,
   IncidentDetail,
   LocalIncidentEvidence,
-  IncidentAssignment,
   IncidentCreated,
   IncidentEvidence,
   IncidentHistoryItem,
@@ -123,14 +122,6 @@ class IncidentsService implements IncidentsRepository {
     return data;
   }
 
-  async assignments(incidentId: string) {
-    const { data } = await this.http.get<
-      ApiEnvelope<PaginatedResult<IncidentAssignment>>
-    >(`${this.prefix}/${incidentId}/assignments`, {
-      params: { page: 1, limit: 20 },
-    });
-    return data;
-  }
 }
 
 export const incidentsService = new IncidentsService();
