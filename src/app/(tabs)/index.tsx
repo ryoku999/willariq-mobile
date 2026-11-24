@@ -1,4 +1,5 @@
 import { HomeMenu } from "@/features/home/components/home-menu";
+import { AppVersionNotice } from "@/features/home/components/app-version-notice";
 import Feather from "@expo/vector-icons/Feather";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image } from "expo-image";
@@ -124,6 +125,7 @@ export default function HomePage() {
               </View>
             </Pressable>
           </View>
+          <AppVersionNotice />
         </View>
       </ScrollView>
       {menuOpen && (

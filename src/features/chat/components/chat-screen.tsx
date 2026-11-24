@@ -34,6 +34,7 @@ import Animated, {
   useReducedMotion,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ChatIncidentPicker } from "./chat-incident-picker";
 
 type FailedMessage = {
   clientRequestId: string;
@@ -42,10 +43,7 @@ type FailedMessage = {
   sessionId: string | null;
 };
 
-const SUGGESTIONS = [
-  "¿Cuáles son las funciones del serenazgo municipal?",
-  "¿Cuál es el estado de mi incidencia MDSJ-2026-000123?",
-];
+const SERENAZGO_QUESTION = "¿Cuáles son las funciones del serenazgo municipal?";
 
 function isClosed(session: ChatSession | null) {
   return (
@@ -77,6 +75,7 @@ export default function ChatScreen() {
     null,
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [incidentPickerOpen, setIncidentPickerOpen] = useState(false);
   const [composerHeight, setComposerHeight] = useState(112);
   const [draft, setDraft] = useState("");
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(
@@ -310,7 +309,10 @@ export default function ChatScreen() {
         className="flex-1"
       >
         {!selectedSession ? (
-          <WelcomeState onSuggestion={(content) => setDraft(content)} />
+          <WelcomeState
+            onAskAboutSerenazgo={() => setDraft(SERENAZGO_QUESTION)}
+            onPickIncident={() => setIncidentPickerOpen(true)}
+          />
         ) : messages.isPending ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator color={isDark ? "#93c5fd" : "#1d4ed8"} />
@@ -395,14 +397,25 @@ export default function ChatScreen() {
           reducedMotion={reducedMotion}
         />
       )}
+      {incidentPickerOpen && (
+        <ChatIncidentPicker
+          onClose={() => setIncidentPickerOpen(false)}
+          onSelect={(code) => {
+            setDraft(`¿Cuál es el estado de mi incidencia ${code}?`);
+            setIncidentPickerOpen(false);
+          }}
+        />
+      )}
     </View>
   );
 }
 
 function WelcomeState({
-  onSuggestion,
+  onAskAboutSerenazgo,
+  onPickIncident,
 }: {
-  onSuggestion: (content: string) => void;
+  onAskAboutSerenazgo: () => void;
+  onPickIncident: () => void;
 }) {
   const isDark = useColorScheme() === "dark";
   const suggestionIconColor = isDark ? "#bfdbfe" : "#1d4ed8";
@@ -423,30 +436,41 @@ function WelcomeState({
           ¿En qué te ayudo?
         </Text>
         <Text className="text-base leading-6 text-slate-200">
-          Pregunta por servicios municipales o consulta una incidencia con su
-          código de seguimiento.
+          Pregunta por servicios municipales o consulta el estado de una de tus
+          incidencias.
         </Text>
       </View>
       <View className="gap-2.5">
         <Text className="text-sm font-bold text-slate-700 dark:text-slate-200">
           Consultas sugeridas
         </Text>
-        {SUGGESTIONS.map((suggestion, index) => (
+        {[
+          {
+            label: SERENAZGO_QUESTION,
+            icon: "message-square" as const,
+            onPress: onAskAboutSerenazgo,
+          },
+          {
+            label: "¿Cuál es el estado de mi incidencia?",
+            icon: "search" as const,
+            onPress: onPickIncident,
+          },
+        ].map((suggestion) => (
           <Pressable
-            key={suggestion}
+            key={suggestion.label}
             accessibilityRole="button"
-            onPress={() => onSuggestion(suggestion)}
+            onPress={suggestion.onPress}
             className="flex-row items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 active:opacity-75 dark:border-slate-700 dark:bg-slate-900"
           >
             <View className="h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-slate-800">
               <Feather
-                name={index === 0 ? "message-square" : "search"}
+                name={suggestion.icon}
                 size={17}
                 color={suggestionIconColor}
               />
             </View>
             <Text className="flex-1 text-sm leading-5 font-medium text-slate-800 dark:text-slate-200">
-              {suggestion}
+              {suggestion.label}
             </Text>
             <Feather
               name="arrow-up-right"
