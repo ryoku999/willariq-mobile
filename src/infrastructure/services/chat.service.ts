@@ -28,36 +28,13 @@ function normalizeRole(value: unknown): ChatRole {
   return role === "ASSISTANT" || role === "SYSTEM" ? role : "USER";
 }
 
-function normalizeSources(value: unknown) {
-  if (!Array.isArray(value)) return [];
-  return value.map((item) => {
-    const source = asRecord(item);
-    return {
-      documentId: asString(source.documentId) || asString(source.id),
-      title: asString(source.title) || "Documento municipal",
-      section: Array.isArray(source.section)
-        ? source.section.filter(
-            (part): part is string => typeof part === "string",
-          )
-        : [],
-    };
-  });
-}
-
 function normalizeMessage(value: unknown): ChatMessage {
   const source = asRecord(value);
-  const metadata = asRecord(source.metadata);
   return {
     id: asString(source.id),
     sessionId: asString(source.sessionId),
     role: normalizeRole(source.role),
     content: asString(source.content),
-    metadata: Object.keys(metadata).length
-      ? {
-          responseType: asString(metadata.responseType) || undefined,
-          sources: normalizeSources(metadata.sources),
-        }
-      : null,
     createdAt: asString(source.createdAt),
   };
 }
@@ -179,7 +156,6 @@ class ChatService implements ChatRepository {
             ? source.finalProvider
             : null,
         errorSummary: asString(source.errorSummary) || null,
-        sources: normalizeSources(source.sources),
       } satisfies ChatJob,
     };
   }

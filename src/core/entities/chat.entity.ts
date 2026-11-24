@@ -1,20 +1,10 @@
 export type ChatRole = "USER" | "ASSISTANT" | "SYSTEM";
 
-export type ChatSource = {
-  documentId: string;
-  section: string[];
-  title: string;
-};
-
 export type ChatMessage = {
   id: string;
   sessionId: string;
   role: ChatRole;
   content: string;
-  metadata: {
-    responseType?: string;
-    sources?: ChatSource[];
-  } | null;
   createdAt: string;
 };
 
@@ -58,5 +48,4 @@ export type ChatJob = {
   status: string;
   provider: string | null;
   errorSummary: string | null;
-  sources: ChatSource[];
 };

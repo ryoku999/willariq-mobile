@@ -508,23 +508,6 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       >
         {message.content}
       </Text>
-      {!isUser &&
-        message.metadata?.sources &&
-        message.metadata.sources.length > 0 && (
-          <View className="mt-3 border-t border-gray-200 pt-2 dark:border-gray-700">
-            <Text className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-              FUENTES
-            </Text>
-            {message.metadata.sources.map((source) => (
-              <Text
-                key={`${source.documentId}-${[source.title, ...source.section].join(" · ")}`}
-                className="mt-1 text-xs text-blue-700 dark:text-blue-300"
-              >
-                {[source.title, ...source.section].join(" · ")}
-              </Text>
-            ))}
-          </View>
-        )}
       <Text
         className={`mt-2 text-[11px] ${isUser ? "text-blue-100" : "text-gray-400"}`}
       >
