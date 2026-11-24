@@ -23,7 +23,7 @@ export function HomeMenu({ onClose, onProfile }: HomeMenuProps) {
     ? [account.firstName, account.lastName].filter(Boolean).join(" ")
     : "";
   const initials = account
-    ? `${account.firstName[0] ?? ""}${account.lastName?.[0] ?? ""}`.toUpperCase()
+    ? `${account.firstName?.[0] ?? ""}${account.lastName?.[0] ?? ""}`.toUpperCase()
     : "";
   const isDark = useColorScheme() === "dark";
   const insets = useSafeAreaInsets();

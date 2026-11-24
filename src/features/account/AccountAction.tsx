@@ -2,7 +2,12 @@ import axios from "axios";
 import { useState } from "react";
 import { Pressable, Text, TextInput, useColorScheme, View } from "react-native";
 
-type Input = { label: string; initial?: string; secret?: boolean };
+type Input = {
+  label: string;
+  initial?: string;
+  secret?: boolean;
+  optional?: boolean;
+};
 
 export function AccountAction({
   title,
@@ -80,7 +85,12 @@ export function AccountAction({
           ))}
           <Pressable
             accessibilityRole="button"
-            disabled={busy || values.some((value) => !value.trim())}
+            disabled={
+              busy ||
+              fields.some(
+                (field, index) => !field.optional && !values[index]?.trim(),
+              )
+            }
             onPress={() => void submit()}
             className="min-h-11 justify-center disabled:opacity-60"
           >

@@ -5,8 +5,6 @@ import {
   LoginRes,
   LogoutReq,
   LogoutRes,
-  UserCreateReq,
-  UserCreateRes,
 } from "@/core/entities/auth.entity";
 import { ApiEnvelope } from "@/shared/interfaces/api-response.interface";
 import { AxiosInstance } from "axios";
@@ -31,9 +29,9 @@ class AuthService implements AuthRepository {
     return data;
   }
 
-  async createUser(dto: UserCreateReq): Promise<ApiEnvelope<UserCreateRes>> {
-    const { data } = await this.http.post<ApiEnvelope<UserCreateRes>>(
-      `${this.prefix}/register`,
+  async registerCitizen(dto: LoginReq): Promise<ApiEnvelope<LoginRes>> {
+    const { data } = await this.http.post<ApiEnvelope<LoginRes>>(
+      `${this.prefix}/mobile/register`,
       dto,
     );
     return data;

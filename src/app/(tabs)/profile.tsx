@@ -75,7 +75,7 @@ const ProfileContent = () => {
   const data = me.data.data;
   const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
   const initials =
-    `${data.firstName[0] ?? ""}${data.lastName?.[0] ?? ""}`.toUpperCase();
+    `${data.firstName?.[0] ?? ""}${data.lastName?.[0] ?? ""}`.toUpperCase();
   const iconColor = isDark ? "#bfdbfe" : "#1d4ed8";
 
   return (
@@ -83,10 +83,16 @@ const ProfileContent = () => {
       <View className="mx-auto w-full max-w-xl gap-6 px-5 pt-2 pb-7">
         <View className="flex-row items-center gap-4 rounded-3xl border border-[#2e4a65] bg-[#162b43] p-5 dark:border-[#52718f]">
           <View className="h-14 w-14 items-center justify-center rounded-2xl bg-[#c4f2e2]">
-            <Text className="text-xl font-bold text-[#155348]">{initials}</Text>
+            {initials ? (
+              <Text className="text-xl font-bold text-[#155348]">
+                {initials}
+              </Text>
+            ) : (
+              <Feather name="user" size={25} color="#155348" />
+            )}
           </View>
           <Text className="flex-1 text-xl font-bold text-white">
-            {fullName}
+            {fullName || "Mi cuenta"}
           </Text>
         </View>
         <View>
@@ -114,7 +120,7 @@ const ProfileContent = () => {
               icon="phone"
               iconColor={iconColor}
               label="Teléfono"
-              value={data.phone}
+              value={data.phone ?? "Sin registrar"}
               bordered
             />
           </View>
@@ -146,24 +152,40 @@ const ProfileContent = () => {
             Cuenta
           </Text>
           <AccountAction
-            title="Editar perfil"
+            title={data.firstName ? "Editar nombre" : "Agregar nombre"}
             fields={[
-              { label: "Nombres", initial: data.firstName },
-              { label: "Apellidos", initial: data.lastName },
-              { label: "Teléfono", initial: data.phone },
+              { label: "Nombres", initial: data.firstName ?? "" },
+              {
+                label: "Apellidos (opcional)",
+                initial: data.lastName ?? "",
+                optional: true,
+              },
             ]}
-            run={async ([firstName, lastName, phone]) => {
+            run={async ([firstName, lastName]) => {
               await accountService.update({
                 firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                phone: phone.trim(),
+                lastName: lastName.trim() || null,
               });
               await me.refetch();
             }}
-            success="Perfil actualizado."
+            success="Nombre actualizado."
           />
           <AccountAction
-            title="Actualizar correo"
+            title={data.phone ? "Editar teléfono" : "Agregar teléfono"}
+            fields={[{ label: "Teléfono", initial: data.phone ?? "" }]}
+            run={async ([phone]) => {
+              await accountService.update({ phone: phone.trim() });
+              await me.refetch();
+            }}
+            success="Teléfono actualizado."
+          />
+          {!data.emailVerifiedAt && (
+            <Text className="mb-2 text-sm text-slate-600 dark:text-slate-300">
+              Agrega y verifica un correo para recuperar tu cuenta.
+            </Text>
+          )}
+          <AccountAction
+            title={data.email ? "Actualizar correo" : "Agregar correo"}
             fields={[
               { label: "Correo", initial: data.email ?? "" },
               { label: "Contraseña actual", secret: true },

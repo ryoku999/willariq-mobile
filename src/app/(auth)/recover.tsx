@@ -1,17 +1,15 @@
 import { AccountAction } from "@/features/account/AccountAction";
+import { AuthFormLayout } from "@/features/auth/components/AuthFormLayout";
 import { accountService } from "@/infrastructure/services/account.service";
 import { Link } from "expo-router";
-import { ScrollView, Text } from "react-native";
+import { View } from "react-native";
 
 export default function RecoverPage() {
   return (
-    <ScrollView
-      className="pt-safe flex-1 bg-gray-50 px-6 dark:bg-gray-950"
-      keyboardShouldPersistTaps="handled"
+    <AuthFormLayout
+      title="Recuperar contraseña"
+      description="Solicita un correo de recuperación o usa el código que recibiste."
     >
-      <Text className="mt-6 mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-        Recuperar contraseña
-      </Text>
       <AccountAction
         title="Solicitar correo de recuperación"
         fields={[{ label: "Correo" }]}
@@ -29,9 +27,14 @@ export default function RecoverPage() {
         }
         success="Contraseña restablecida. Ya puedes iniciar sesión."
       />
-      <Link href="/login" className="py-4 text-blue-600 dark:text-blue-400">
-        Volver al inicio de sesión
-      </Link>
-    </ScrollView>
+      <View className="items-center border-t border-slate-200 pt-1 dark:border-slate-700">
+        <Link
+          href="/login"
+          className="min-h-11 py-3 font-semibold text-blue-700 dark:text-blue-300"
+        >
+          Volver al inicio de sesión
+        </Link>
+      </View>
+    </AuthFormLayout>
   );
 }

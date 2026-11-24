@@ -1,9 +1,9 @@
 export interface UserProfile {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName: string | null;
+  lastName: string | null;
   dni: string;
-  phone: string;
+  phone: string | null;
   email: string | null;
   emailVerifiedAt: string | null;
   role: string;

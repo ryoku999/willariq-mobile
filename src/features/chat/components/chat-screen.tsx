@@ -68,6 +68,7 @@ function chatErrorMessage(error: unknown) {
 export default function ChatScreen() {
   const router = useRouter();
   const isDark = useColorScheme() === "dark";
+  const headerIconColor = isDark ? "#e2e8f0" : "#16283e";
   const reducedMotion = useReducedMotion();
   const scrollRef = useRef<{
     scrollToEnd: (options?: { animated?: boolean }) => void;
@@ -236,27 +237,30 @@ export default function ChatScreen() {
 
   return (
     <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
-      <View className="flex-row items-center gap-2 border-b border-[#2e4a65] bg-[#162b43] px-3 py-3 dark:border-[#52718f]">
+      <View className="flex-row items-center gap-2 border-b border-slate-200 px-4 pt-5 pb-3 dark:border-slate-800">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Volver a Inicio"
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/")
           }
-          className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 active:opacity-70"
+          className="h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white active:opacity-70 dark:border-slate-600 dark:bg-slate-800"
         >
-          <Feather name="arrow-left" size={21} color="#f1f5f9" />
+          <Feather name="arrow-left" size={21} color={headerIconColor} />
         </Pressable>
         <View className="min-w-0 flex-1 px-1">
           <Text
             accessibilityRole="header"
             numberOfLines={1}
-            className="text-base font-bold text-white"
+            className="text-base font-bold text-[#16283e] dark:text-white"
           >
             {selectedSession?.title ?? "Asistente municipal"}
           </Text>
           {selectedSession && (
-            <Text numberOfLines={1} className="text-xs text-slate-200">
+            <Text
+              numberOfLines={1}
+              className="text-xs text-slate-600 dark:text-slate-300"
+            >
               {sessionClosed ? "Conversación cerrada" : "Asistente municipal"}
             </Text>
           )}
@@ -267,12 +271,12 @@ export default function ChatScreen() {
             accessibilityLabel="Cerrar conversación"
             onPress={confirmClose}
             disabled={closeSession.isPending}
-            className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 active:opacity-70 disabled:opacity-50"
+            className="h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white active:opacity-70 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800"
           >
             {closeSession.isPending ? (
-              <ActivityIndicator color="#f1f5f9" />
+              <ActivityIndicator color={headerIconColor} />
             ) : (
-              <Feather name="archive" size={19} color="#f1f5f9" />
+              <Feather name="archive" size={19} color={headerIconColor} />
             )}
           </Pressable>
         )}
@@ -281,9 +285,13 @@ export default function ChatScreen() {
           accessibilityLabel="Abrir historial de conversaciones"
           accessibilityState={{ expanded: drawerOpen }}
           onPress={() => setDrawerOpen(true)}
-          className="h-11 w-11 items-center justify-center rounded-xl bg-[#c4f2e2] active:opacity-75"
+          className="h-11 w-11 items-center justify-center rounded-xl border border-[#a7e0d1] bg-[#d8f7ed] active:opacity-75 dark:border-[#3c6d64] dark:bg-[#193a35]"
         >
-          <Feather name="menu" size={20} color="#155348" />
+          <Feather
+            name="menu"
+            size={20}
+            color={isDark ? "#a7f3d0" : "#155348"}
+          />
         </Pressable>
       </View>
 

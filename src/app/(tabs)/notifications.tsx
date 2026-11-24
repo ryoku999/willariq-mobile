@@ -10,7 +10,6 @@ import {
 } from "@/infrastructure/hooks/use-notifications";
 import ErrorState from "@/presentation/components/ErrorState";
 import PendingState from "@/presentation/components/PendingState";
-import { SectionHeader } from "@/presentation/components/SectionHeader";
 import { formatDate } from "@/shared/utils/format-date";
 import {
   BottomSheet,
@@ -119,66 +118,50 @@ const NotificationsPage = () => {
     />
   );
 
-  if (notifications.isLoading) {
-    return (
-      <View className="pt-safe flex-1 bg-gray-50 dark:bg-gray-950">
-        <PendingState message="Cargando notificaciones..." />
-      </View>
-    );
-  }
-
-  if (notifications.isError && items.length === 0) {
-    return (
-      <View className="pt-safe flex-1 bg-gray-50 dark:bg-gray-950">
-        <ErrorState
-          title="No pudimos cargar las notificaciones"
-          onRetry={() => void refresh()}
-          isRetrying={notifications.isRefetching}
-        />
-      </View>
-    );
-  }
-
   return (
     <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
-      <SectionHeader
-        title="Notificaciones"
-        description={
-          unreadCount > 0 ? `${unreadCount} sin leer` : "Estás al día"
-        }
-        action={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Actualizar notificaciones"
-            onPress={() => void refresh()}
-            disabled={notifications.isRefetching}
-            className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 disabled:opacity-60"
-          >
-            {notifications.isRefetching ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Feather name="refresh-cw" size={20} color="white" />
-            )}
-          </Pressable>
-        }
-      >
+      <View className="mt-5 flex-row items-center gap-3 px-5">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Marcar todas las notificaciones como leídas"
           onPress={() => markAllRead.mutate()}
           disabled={unreadCount === 0 || markAllRead.isPending}
-          className="mt-3 min-h-11 flex-row items-center gap-2 self-start rounded-xl border border-white/25 bg-white/10 px-4 disabled:opacity-50"
+          className="min-h-11 flex-1 flex-row items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 active:opacity-70 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800"
         >
           {markAllRead.isPending ? (
-            <ActivityIndicator color="white" size="small" />
+            <ActivityIndicator
+              color={isDark ? "#bfdbfe" : "#1d4ed8"}
+              size="small"
+            />
           ) : (
-            <Feather name="check-circle" size={16} color="white" />
+            <Feather
+              name="check-circle"
+              size={16}
+              color={isDark ? "#bfdbfe" : "#1d4ed8"}
+            />
           )}
-          <Text className="font-semibold text-white">
+          <Text className="shrink text-center font-semibold text-blue-800 dark:text-blue-200">
             Marcar todas como leídas
           </Text>
         </Pressable>
-      </SectionHeader>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Actualizar notificaciones"
+          onPress={() => void refresh()}
+          disabled={notifications.isFetching}
+          className="h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white active:opacity-70 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800"
+        >
+          {notifications.isLoading || notifications.isRefetching ? (
+            <ActivityIndicator color={isDark ? "#bfdbfe" : "#1d4ed8"} />
+          ) : (
+            <Feather
+              name="refresh-cw"
+              size={20}
+              color={isDark ? "#bfdbfe" : "#1d4ed8"}
+            />
+          )}
+        </Pressable>
+      </View>
 
       <FlatList
         data={items}
@@ -211,21 +194,31 @@ const NotificationsPage = () => {
           ) : null
         }
         ListEmptyComponent={
-          <View className="flex-1 items-center justify-center px-8">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
-              <Feather
-                name="bell-off"
-                size={28}
-                color={isDark ? "#bfdbfe" : "#1d4ed8"}
-              />
+          notifications.isLoading ? (
+            <PendingState message="Cargando notificaciones..." />
+          ) : notifications.isError ? (
+            <ErrorState
+              title="No pudimos cargar las notificaciones"
+              onRetry={() => void refresh()}
+              isRetrying={notifications.isRefetching}
+            />
+          ) : (
+            <View className="flex-1 items-center justify-center px-8">
+              <View className="h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
+                <Feather
+                  name="bell-off"
+                  size={28}
+                  color={isDark ? "#bfdbfe" : "#1d4ed8"}
+                />
+              </View>
+              <Text className="mt-5 text-center text-xl font-bold text-gray-900 dark:text-white">
+                No tienes notificaciones
+              </Text>
+              <Text className="mt-2 text-center leading-5 text-gray-500 dark:text-gray-400">
+                Las actualizaciones de tus incidencias aparecerán aquí.
+              </Text>
             </View>
-            <Text className="mt-5 text-center text-xl font-bold text-gray-900 dark:text-white">
-              No tienes notificaciones
-            </Text>
-            <Text className="mt-2 text-center leading-5 text-gray-500 dark:text-gray-400">
-              Las actualizaciones de tus incidencias aparecerán aquí.
-            </Text>
-          </View>
+          )
         }
       />
 

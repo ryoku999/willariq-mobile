@@ -15,6 +15,7 @@ import axios, {
 const baseURL = process.env.EXPO_PUBLIC_BASE_URL;
 const PUBLIC_AUTH_ROUTES = [
   "/auth/mobile/login",
+  "/auth/mobile/register",
   "/auth/register",
   "/auth/mobile/refresh",
   "/auth/mobile/logout",

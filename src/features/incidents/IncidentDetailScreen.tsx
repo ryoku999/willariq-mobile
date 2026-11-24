@@ -222,22 +222,26 @@ function IncidentDetailContent({ id }: { id: string }) {
 
   return (
     <View className="pt-safe flex-1">
-      <View className="flex-row items-center gap-3 border-b border-[#2e4a65] bg-[#162b43] px-4 py-3 dark:border-[#52718f]">
+      <View className="flex-row items-center gap-2 border-b border-slate-200 px-4 pt-5 pb-3 dark:border-slate-800">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Volver a incidencias"
-          className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 active:opacity-75"
+          className="h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white active:opacity-70 dark:border-slate-600 dark:bg-slate-800"
           onPress={() =>
             router.canGoBack()
               ? router.back()
               : router.replace("/(tabs)/incidents")
           }
         >
-          <Feather name="arrow-left" size={21} color="#fff" />
+          <Feather
+            name="arrow-left"
+            size={21}
+            color={isDark ? "#e2e8f0" : "#16283e"}
+          />
         </Pressable>
         <Text
           accessibilityRole="header"
-          className="flex-1 text-lg font-bold text-white"
+          className="min-w-0 flex-1 px-1 text-base font-bold text-[#16283e] dark:text-white"
         >
           Detalle de incidencia
         </Text>

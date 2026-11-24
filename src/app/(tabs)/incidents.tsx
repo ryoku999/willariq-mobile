@@ -1,10 +1,16 @@
 import { STATUS_LABELS } from "@/features/incidents/status-labels";
 import { useIncidentList } from "@/infrastructure/hooks/use-incidents";
-import { SectionHeader } from "@/presentation/components/SectionHeader";
 import { formatDate } from "@/shared/utils/format-date";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
-import { FlatList, Pressable, Text, useColorScheme, View } from "react-native";
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 
 const IncidentsPage = () => {
   const isDark = useColorScheme() === "dark";
@@ -12,12 +18,8 @@ const IncidentsPage = () => {
   const incidents = list.data?.pages.flatMap((page) => page.data.items) ?? [];
   return (
     <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
-      <SectionHeader
-        title="Incidencias"
-        description="Consulta el estado de los reportes asociados a tu cuenta."
-      />
-
       <FlatList
+        className="mt-5"
         data={incidents}
         refreshing={list.isRefetching}
         onRefresh={() => void list.refetch()}
@@ -25,7 +27,11 @@ const IncidentsPage = () => {
           if (list.hasNextPage && !list.isFetching) void list.fetchNextPage();
         }}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: 40,
+          flexGrow: 1,
+        }}
         renderItem={({ item }) => (
           <Pressable
             onPress={() =>
@@ -69,23 +75,28 @@ const IncidentsPage = () => {
         )}
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center px-8">
-            <View className="h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
-              <Feather
-                name="clipboard"
-                size={28}
+            {list.isPending ? (
+              <ActivityIndicator
+                accessibilityLabel="Cargando incidencias"
                 color={isDark ? "#bfdbfe" : "#1d4ed8"}
               />
-            </View>
-            <Text className="mt-5 text-center text-xl font-bold text-gray-900 dark:text-white">
-              {list.isPending
-                ? "Cargando incidencias…"
-                : list.isError
-                  ? "No se pudieron cargar las incidencias"
-                  : "Aún no tienes incidencias"}
-            </Text>
-            <Text className="mt-2 text-center leading-5 text-gray-500 dark:text-gray-400">
-              Los reportes que envíes aparecerán aquí para darles seguimiento.
-            </Text>
+            ) : list.isError ? (
+              <Text className="text-center font-medium text-slate-700 dark:text-slate-200">
+                No se pudieron cargar las incidencias.
+              </Text>
+            ) : (
+              <View
+                accessible
+                accessibilityLabel="Aún no tienes incidencias"
+                className="h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950"
+              >
+                <Feather
+                  name="clipboard"
+                  size={28}
+                  color={isDark ? "#bfdbfe" : "#1d4ed8"}
+                />
+              </View>
+            )}
           </View>
         }
       />

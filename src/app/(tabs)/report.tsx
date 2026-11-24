@@ -3,7 +3,6 @@ import type { IncidentFormValues } from "@/features/incidents/schemas/incident.s
 import { useSubmitIncident } from "@/infrastructure/hooks/use-incidents";
 import { useIncidentDraftStore } from "@/infrastructure/storage/incident-draft-storage";
 import { KeyboardAwareScrollView } from "@/presentation/components/KeyboardAwareScrollView";
-import { SectionHeader } from "@/presentation/components/SectionHeader";
 import { getCurrentCoordinates } from "@/shared/utils/get-current-coordinates";
 import {
   deleteIncidentImage,
@@ -293,11 +292,7 @@ const ReportPage = () => {
 
   return (
     <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
-      <SectionHeader
-        title="Registra una incidencia"
-        description="Describe el problema, indica dónde ocurrió y adjunta fotos si tienes."
-      />
-      <View className="shrink-0 flex-row border-b border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900">
+      <View className="shrink-0 flex-row px-3 pt-5 pb-3">
         {STEPS.map((label, index) => (
           <View
             key={label}
@@ -307,7 +302,7 @@ const ReportPage = () => {
             className="flex-1 items-center gap-1"
           >
             <View
-              className={`h-8 w-8 items-center justify-center rounded-full ${index === step ? "bg-blue-700 dark:bg-blue-300" : index < step ? "bg-blue-100 dark:bg-blue-950" : "bg-slate-100 dark:bg-slate-800"}`}
+              className={`h-8 w-8 items-center justify-center rounded-full ${index === step ? "bg-blue-700 dark:bg-blue-300" : index < step ? "bg-blue-100 dark:bg-blue-950" : "bg-slate-200 dark:bg-slate-800"}`}
             >
               <Text
                 className={`text-xs font-bold ${index === step ? "text-white dark:text-blue-950" : index < step ? "text-blue-800 dark:text-blue-200" : "text-slate-600 dark:text-slate-300"}`}
@@ -335,10 +330,6 @@ const ReportPage = () => {
         <View className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
           {step === 0 && (
             <View>
-              <SectionTitle
-                title="Describe la incidencia"
-                subtitle="Incluye detalles que ayuden a identificar el problema."
-              />
               <Controller
                 control={control}
                 name="originalMessage"
@@ -349,9 +340,10 @@ const ReportPage = () => {
                     onBlur={onBlur}
                     multiline
                     textAlignVertical="top"
+                    accessibilityLabel="Descripción de la incidencia"
                     placeholder="Ejemplo: Hay acumulación de basura junto al parque desde hace varios días..."
                     placeholderTextColor={placeholderColor}
-                    className={`mt-5 min-h-40 rounded-2xl border bg-slate-50 p-4 text-base leading-6 text-slate-900 dark:bg-slate-800 dark:text-white ${errors.originalMessage ? "border-red-500" : "border-slate-300 dark:border-slate-500"}`}
+                    className={`min-h-40 rounded-2xl border bg-slate-50 p-4 text-base leading-6 text-slate-900 dark:bg-slate-800 dark:text-white ${errors.originalMessage ? "border-red-500" : "border-slate-300 dark:border-slate-500"}`}
                   />
                 )}
               />

@@ -1,8 +1,11 @@
 import { api } from "@/config/http/http-client";
 
 export const accountService = {
-  update: (data: { firstName: string; lastName: string; phone: string }) =>
-    api.patch("/users/me", data),
+  update: (data: {
+    firstName?: string;
+    lastName?: string | null;
+    phone?: string;
+  }) => api.patch("/users/me", data),
   setEmail: (email: string, currentPassword: string) =>
     api.put("/users/me/email", { email, currentPassword }),
   requestVerification: () =>

@@ -16,10 +16,10 @@ export interface LoginRes {
     dni: string;
     email: string | null;
     emailVerifiedAt: string | null;
-    firstName: string;
+    firstName: string | null;
     id: string;
-    lastName: string;
-    phone: string;
+    lastName: string | null;
+    phone: string | null;
     role: UserRole;
     status: string;
   };
@@ -33,27 +33,4 @@ export interface LogoutReq {
 // logout response
 export interface LogoutRes {
   message: string;
-}
-
-// user create request
-export interface UserCreateReq {
-  firstName: string;
-  dni: string;
-  phone: string;
-  password: string;
-  lastName: string | null;
-}
-
-export interface UserCreateRes {
-  id: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  dni: string;
-  email: string | null;
-  emailVerifiedAt: string | null;
-  role: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
 }
