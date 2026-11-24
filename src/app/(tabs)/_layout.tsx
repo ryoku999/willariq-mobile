@@ -5,11 +5,13 @@ import Feather from "@expo/vector-icons/Feather";
 import Octicons from "@expo/vector-icons/Octicons";
 import { Redirect, Tabs } from "expo-router";
 import { ActivityIndicator, useColorScheme, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const TabLayout = () => {
   const backgroundColor = useScreenBackground();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const { bottom } = useSafeAreaInsets();
   const { status } = useAuthStore();
   const unreadNotifications = useUnreadNotifications(
     status === "authenticated",
@@ -43,8 +45,10 @@ const TabLayout = () => {
         headerShown: false,
         sceneStyle: { backgroundColor },
         tabBarActiveTintColor: isDark ? "#93c5fd" : "#2563eb",
-        tabBarInactiveTintColor: isDark ? "#9ca3af" : "#6b7280",
+        tabBarInactiveTintColor: isDark ? "#cbd5e1" : "#475569",
+        tabBarLabelStyle: { fontSize: 11, lineHeight: 14, fontWeight: "600" },
         tabBarStyle: {
+          height: 58 + bottom,
           backgroundColor: isDark ? "#111827" : "#ffffff",
           borderTopColor: isDark ? "#374151" : "#e5e7eb",
         },
@@ -96,15 +100,7 @@ const TabLayout = () => {
         }}
       />
 
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Perfil",
-          tabBarIcon: ({ color, size }) => (
-            <Octicons name="person" size={size} color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 };

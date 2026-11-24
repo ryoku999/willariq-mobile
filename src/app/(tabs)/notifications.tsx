@@ -10,6 +10,7 @@ import {
 } from "@/infrastructure/hooks/use-notifications";
 import ErrorState from "@/presentation/components/ErrorState";
 import PendingState from "@/presentation/components/PendingState";
+import { SectionHeader } from "@/presentation/components/SectionHeader";
 import { formatDate } from "@/shared/utils/format-date";
 import {
   BottomSheet,
@@ -139,26 +140,19 @@ const NotificationsPage = () => {
   }
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <View className="pt-safe bg-blue-600 px-5 pb-6 dark:bg-blue-950">
-        <View className="mt-5 flex-row items-start justify-between gap-4">
-          <View className="flex-1">
-            <Text className="text-xs font-semibold tracking-widest text-blue-100">
-              CENTRO DE ACTIVIDAD
-            </Text>
-            <Text className="mt-2 text-3xl font-bold text-white">
-              Notificaciones
-            </Text>
-            <Text className="mt-1 text-blue-100">
-              {unreadCount > 0 ? `${unreadCount} sin leer` : "Estás al día"}
-            </Text>
-          </View>
+    <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
+      <SectionHeader
+        title="Notificaciones"
+        description={
+          unreadCount > 0 ? `${unreadCount} sin leer` : "Estás al día"
+        }
+        action={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Actualizar notificaciones"
             onPress={() => void refresh()}
             disabled={notifications.isRefetching}
-            className="h-11 w-11 items-center justify-center rounded-full bg-blue-500 disabled:opacity-50 dark:bg-blue-900"
+            className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 disabled:opacity-60"
           >
             {notifications.isRefetching ? (
               <ActivityIndicator color="white" />
@@ -166,13 +160,14 @@ const NotificationsPage = () => {
               <Feather name="refresh-cw" size={20} color="white" />
             )}
           </Pressable>
-        </View>
+        }
+      >
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Marcar todas las notificaciones como leídas"
           onPress={() => markAllRead.mutate()}
           disabled={unreadCount === 0 || markAllRead.isPending}
-          className="mt-5 min-h-11 flex-row items-center gap-2 self-start rounded-xl bg-white/15 px-4 disabled:opacity-40"
+          className="mt-3 min-h-11 flex-row items-center gap-2 self-start rounded-xl border border-white/25 bg-white/10 px-4 disabled:opacity-50"
         >
           {markAllRead.isPending ? (
             <ActivityIndicator color="white" size="small" />
@@ -183,7 +178,7 @@ const NotificationsPage = () => {
             Marcar todas como leídas
           </Text>
         </Pressable>
-      </View>
+      </SectionHeader>
 
       <FlatList
         data={items}
@@ -200,7 +195,10 @@ const NotificationsPage = () => {
         onEndReachedThreshold={0.4}
         ListFooterComponent={
           notifications.isFetchingNextPage ? (
-            <ActivityIndicator color="#2563eb" className="my-4" />
+            <ActivityIndicator
+              color={isDark ? "#93c5fd" : "#2563eb"}
+              className="my-4"
+            />
           ) : notifications.isFetchNextPageError ? (
             <Pressable
               onPress={loadNextPage}
@@ -215,7 +213,11 @@ const NotificationsPage = () => {
         ListEmptyComponent={
           <View className="flex-1 items-center justify-center px-8">
             <View className="h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-950">
-              <Feather name="bell-off" size={28} color="#2563eb" />
+              <Feather
+                name="bell-off"
+                size={28}
+                color={isDark ? "#bfdbfe" : "#1d4ed8"}
+              />
             </View>
             <Text className="mt-5 text-center text-xl font-bold text-gray-900 dark:text-white">
               No tienes notificaciones
@@ -291,7 +293,7 @@ function NotificationRow({
         >
           {item.message || copy.fallback}
         </Text>
-        <Text className="mt-2 text-xs text-gray-400">
+        <Text className="mt-2 text-xs text-slate-600 dark:text-slate-300">
           {formatDate(item.createdAt)}
         </Text>
       </View>

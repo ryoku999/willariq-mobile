@@ -3,6 +3,7 @@ import type { IncidentFormValues } from "@/features/incidents/schemas/incident.s
 import { useSubmitIncident } from "@/infrastructure/hooks/use-incidents";
 import { useIncidentDraftStore } from "@/infrastructure/storage/incident-draft-storage";
 import { KeyboardAwareScrollView } from "@/presentation/components/KeyboardAwareScrollView";
+import { SectionHeader } from "@/presentation/components/SectionHeader";
 import { getCurrentCoordinates } from "@/shared/utils/get-current-coordinates";
 import {
   deleteIncidentImage,
@@ -30,6 +31,8 @@ const MAX_TOTAL_SIZE = 25 * 1024 * 1024;
 
 const ReportPage = () => {
   const isDark = useColorScheme() === "dark";
+  const accentColor = isDark ? "#93c5fd" : "#1d4ed8";
+  const placeholderColor = isDark ? "#cbd5e1" : "#64748b";
   const [step, setStep] = useState(0);
   const [isHydrated, setHydrated] = useState(
     useIncidentDraftStore.persist.hasHydrated(),
@@ -243,7 +246,7 @@ const ReportPage = () => {
   if (!isHydrated) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <ActivityIndicator color="#2563eb" />
+        <ActivityIndicator color={accentColor} />
       </View>
     );
   }
@@ -280,7 +283,7 @@ const ReportPage = () => {
               Reportar otra incidencia
             </Text>
           </Pressable>
-          <Text className="mt-3 text-center text-xs text-gray-400">
+          <Text className="mt-3 text-center text-xs text-slate-600 dark:text-slate-300">
             Consulta los detalles desde la pestaña Incidencias.
           </Text>
         </View>
@@ -289,50 +292,47 @@ const ReportPage = () => {
   }
 
   return (
-    <KeyboardAwareScrollView
-      className="flex-1 bg-gray-50 dark:bg-gray-950"
-      contentContainerClassName="pb-safe flex-grow"
-      contentContainerStyle={{ paddingBottom: 32 }}
-      bottomOffset={20}
-      keyboardDismissMode="on-drag"
-      keyboardShouldPersistTaps="handled"
-    >
-      <View className="pt-safe bg-blue-600 px-5 pb-8 dark:bg-blue-950">
-        <Text className="mt-5 text-xs font-semibold tracking-widest text-blue-100">
-          NUEVA INCIDENCIA
-        </Text>
-        <Text className="mt-2 text-3xl font-bold text-white">
-          Cuéntanos qué ocurrió
-        </Text>
-        <Text className="mt-2 leading-5 text-blue-100">
-          Registra el problema, su ubicación y las evidencias disponibles.
-        </Text>
-      </View>
-
-      <View className="px-5 py-5">
-        <View className="mb-5 flex-row items-center justify-between">
-          {STEPS.map((label, index) => (
-            <View key={label} className="flex-1 items-center">
-              <View
-                className={`h-8 w-8 items-center justify-center rounded-full ${index <= step ? "bg-blue-600 dark:bg-blue-500" : "bg-gray-200 dark:bg-gray-800"}`}
-              >
-                <Text
-                  className={`text-xs font-bold ${index <= step ? "text-white" : "text-gray-500"}`}
-                >
-                  {index + 1}
-                </Text>
-              </View>
+    <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
+      <SectionHeader
+        title="Registra una incidencia"
+        description="Describe el problema, indica dónde ocurrió y adjunta fotos si tienes."
+      />
+      <View className="shrink-0 flex-row border-b border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900">
+        {STEPS.map((label, index) => (
+          <View
+            key={label}
+            accessible
+            accessibilityLabel={`Paso ${index + 1} de ${STEPS.length}: ${label}`}
+            accessibilityState={{ selected: index === step }}
+            className="flex-1 items-center gap-1"
+          >
+            <View
+              className={`h-8 w-8 items-center justify-center rounded-full ${index === step ? "bg-blue-700 dark:bg-blue-300" : index < step ? "bg-blue-100 dark:bg-blue-950" : "bg-slate-100 dark:bg-slate-800"}`}
+            >
               <Text
-                numberOfLines={1}
-                className={`mt-1 text-[10px] ${index === step ? "font-semibold text-blue-600 dark:text-blue-400" : "text-gray-400"}`}
+                className={`text-xs font-bold ${index === step ? "text-white dark:text-blue-950" : index < step ? "text-blue-800 dark:text-blue-200" : "text-slate-600 dark:text-slate-300"}`}
               >
-                {label}
+                {index + 1}
               </Text>
             </View>
-          ))}
-        </View>
-
-        <View className="rounded-3xl bg-white p-5 dark:bg-gray-900">
+            <Text
+              numberOfLines={1}
+              className={`px-0.5 text-[11px] ${index === step ? "font-bold text-blue-800 dark:text-blue-200" : "font-medium text-slate-600 dark:text-slate-300"}`}
+            >
+              {label}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <KeyboardAwareScrollView
+        key={step}
+        className="flex-1"
+        contentContainerStyle={{ padding: 20, paddingBottom: 32 }}
+        bottomOffset={20}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
+        <View className="mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-slate-900">
           {step === 0 && (
             <View>
               <SectionTitle
@@ -350,14 +350,14 @@ const ReportPage = () => {
                     multiline
                     textAlignVertical="top"
                     placeholder="Ejemplo: Hay acumulación de basura junto al parque desde hace varios días..."
-                    placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
-                    className={`mt-5 min-h-40 rounded-2xl border bg-gray-50 p-4 text-base leading-6 text-gray-900 dark:bg-gray-950 dark:text-white ${errors.originalMessage ? "border-red-500" : "border-gray-200 dark:border-gray-800"}`}
+                    placeholderTextColor={placeholderColor}
+                    className={`mt-5 min-h-40 rounded-2xl border bg-slate-50 p-4 text-base leading-6 text-slate-900 dark:bg-slate-800 dark:text-white ${errors.originalMessage ? "border-red-500" : "border-slate-300 dark:border-slate-500"}`}
                   />
                 )}
               />
               <View className="mt-1 flex-row justify-between">
                 <FieldError message={errors.originalMessage?.message} />
-                <Text className="ml-auto text-xs text-gray-400">
+                <Text className="ml-auto text-xs text-slate-600 dark:text-slate-300">
                   {message.length}/5000
                 </Text>
               </View>
@@ -372,8 +372,8 @@ const ReportPage = () => {
                     onChangeText={onChange}
                     onBlur={onBlur}
                     placeholder="Av. Principal 123"
-                    placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    placeholderTextColor={placeholderColor}
+                    className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 text-base text-slate-900 dark:border-slate-500 dark:bg-slate-800 dark:text-white"
                   />
                 )}
               />
@@ -389,8 +389,8 @@ const ReportPage = () => {
                     onChangeText={onChange}
                     onBlur={onBlur}
                     placeholder="Al costado del parque municipal"
-                    placeholderTextColor={isDark ? "#6b7280" : "#9ca3af"}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-base text-gray-900 dark:border-gray-800 dark:bg-gray-950 dark:text-white"
+                    placeholderTextColor={placeholderColor}
+                    className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 text-base text-slate-900 dark:border-slate-500 dark:bg-slate-800 dark:text-white"
                   />
                 )}
               />
@@ -412,7 +412,7 @@ const ReportPage = () => {
               />
               <View className="mt-5 items-center rounded-2xl border border-dashed border-blue-300 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-950">
                 <View className="h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
-                  <Feather name="map-pin" size={25} color="#2563eb" />
+                  <Feather name="map-pin" size={25} color={accentColor} />
                 </View>
                 {draft.latitude !== null && draft.longitude !== null ? (
                   <>
@@ -483,7 +483,7 @@ const ReportPage = () => {
               </View>
               {isPreparingImages && (
                 <View className="mt-4 flex-row items-center justify-center gap-2">
-                  <ActivityIndicator color="#2563eb" />
+                  <ActivityIndicator color={accentColor} />
                   <Text className="text-sm text-gray-500 dark:text-gray-400">
                     Optimizando fotografías...
                   </Text>
@@ -520,7 +520,7 @@ const ReportPage = () => {
                 ))}
               </View>
               {draft.evidences.length === 0 && (
-                <Text className="mt-5 text-center text-sm text-gray-400">
+                <Text className="mt-5 text-center text-sm text-slate-600 dark:text-slate-300">
                   Puedes continuar sin fotografías.
                 </Text>
               )}
@@ -559,7 +559,7 @@ const ReportPage = () => {
 
               {submitIncident.isPending && (
                 <View className="mt-5 rounded-2xl bg-blue-50 p-4 dark:bg-blue-950">
-                  <ActivityIndicator color="#2563eb" />
+                  <ActivityIndicator color={accentColor} />
                   <Text className="mt-2 text-center text-sm font-medium text-blue-700 dark:text-blue-200">
                     {getSendingMessage(draft.evidences)}
                   </Text>
@@ -592,8 +592,8 @@ const ReportPage = () => {
             </View>
           )}
         </View>
-      </View>
-    </KeyboardAwareScrollView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 };
 
@@ -714,7 +714,7 @@ function EvidenceAction({
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="mt-4 rounded-2xl bg-gray-50 px-4 py-3 dark:bg-gray-950">
-      <Text className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
+      <Text className="text-xs font-semibold tracking-wide text-slate-600 uppercase dark:text-slate-300">
         {label}
       </Text>
       <Text className="mt-1 leading-5 text-gray-800 dark:text-gray-200">

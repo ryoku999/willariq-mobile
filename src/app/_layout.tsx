@@ -4,11 +4,14 @@ import { useAuthStore } from "@/infrastructure/storage/auth-storage";
 import "@/styles/global.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { useColorScheme } from "react-native";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 
 export default function RootLayout() {
   const backgroundColor = useScreenBackground();
+  const isDark = useColorScheme() === "dark";
   const hydrate = useAuthStore((state) => state.hydrate);
 
   useEffect(() => {
@@ -18,6 +21,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <KeyboardProvider>
+        <StatusBar style={isDark ? "light" : "dark"} />
         <Stack
           screenOptions={{
             headerShown: false,

@@ -10,13 +10,14 @@ import {
 import { getApiErrorMessages } from "@/shared/errors/api-error";
 import { formatDate } from "@/shared/utils/format-date";
 import Feather from "@expo/vector-icons/Feather";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Crypto from "expo-crypto";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  BackHandler,
+  Modal,
   Pressable,
   ScrollView,
   Text,
@@ -29,12 +30,10 @@ import {
   KeyboardStickyView,
 } from "react-native-keyboard-controller";
 import Animated, {
-  FadeIn,
-  FadeOut,
   SlideInLeft,
-  SlideOutLeft,
   useReducedMotion,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type FailedMessage = {
   clientRequestId: string;
@@ -77,6 +76,7 @@ export default function ChatScreen() {
     null,
   );
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [composerHeight, setComposerHeight] = useState(112);
   const [draft, setDraft] = useState("");
   const [failedMessage, setFailedMessage] = useState<FailedMessage | null>(
     null,
@@ -100,20 +100,6 @@ export default function ChatScreen() {
   const closing =
     closeSession.isPending && closeSession.variables === selectedSession?.id;
   const isSending = createSession.isPending || sendMessage.isPending;
-
-  useFocusEffect(
-    useCallback(() => {
-      const subscription = BackHandler.addEventListener(
-        "hardwareBackPress",
-        () => {
-          if (!drawerOpen) return false;
-          setDrawerOpen(false);
-          return true;
-        },
-      );
-      return () => subscription.remove();
-    }, [drawerOpen]),
-  );
 
   useEffect(() => {
     if (!latestMessageId) return;
@@ -249,30 +235,31 @@ export default function ChatScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <View className="pt-safe flex-row items-center border-b border-gray-200 bg-white px-4 pb-3 dark:border-gray-800 dark:bg-gray-900">
+    <View className="pt-safe flex-1 bg-[#f5f7fa] dark:bg-gray-950">
+      <View className="flex-row items-center gap-2 border-b border-[#2e4a65] bg-[#162b43] px-3 py-3 dark:border-[#52718f]">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Volver a Inicio"
-          onPress={() => router.back()}
-          className="h-11 w-11 items-center justify-center rounded-full"
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/")
+          }
+          className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 active:opacity-70"
         >
-          <Feather
-            name="chevron-left"
-            size={24}
-            color={isDark ? "#e5e7eb" : "#1f2937"}
-          />
+          <Feather name="arrow-left" size={21} color="#f1f5f9" />
         </Pressable>
-        <View className="flex-1 px-2">
+        <View className="min-w-0 flex-1 px-1">
           <Text
+            accessibilityRole="header"
             numberOfLines={1}
-            className="text-base font-bold text-gray-900 dark:text-white"
+            className="text-base font-bold text-white"
           >
             {selectedSession?.title ?? "Asistente municipal"}
           </Text>
-          <Text className="text-xs text-gray-500 dark:text-gray-400">
-            Consultas municipales e incidencias
-          </Text>
+          {selectedSession && (
+            <Text numberOfLines={1} className="text-xs text-slate-200">
+              {sessionClosed ? "Conversación cerrada" : "Asistente municipal"}
+            </Text>
+          )}
         </View>
         {selectedSession && !sessionClosed && (
           <Pressable
@@ -280,30 +267,23 @@ export default function ChatScreen() {
             accessibilityLabel="Cerrar conversación"
             onPress={confirmClose}
             disabled={closeSession.isPending}
-            className="mr-1 h-11 w-11 items-center justify-center rounded-full disabled:opacity-50"
+            className="h-11 w-11 items-center justify-center rounded-xl border border-white/25 bg-white/10 active:opacity-70 disabled:opacity-50"
           >
             {closeSession.isPending ? (
-              <ActivityIndicator color={isDark ? "#e5e7eb" : "#1f2937"} />
+              <ActivityIndicator color="#f1f5f9" />
             ) : (
-              <Feather
-                name="archive"
-                size={19}
-                color={isDark ? "#e5e7eb" : "#1f2937"}
-              />
+              <Feather name="archive" size={19} color="#f1f5f9" />
             )}
           </Pressable>
         )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Abrir historial de conversaciones"
+          accessibilityState={{ expanded: drawerOpen }}
           onPress={() => setDrawerOpen(true)}
-          className="h-11 w-11 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-950"
+          className="h-11 w-11 items-center justify-center rounded-xl bg-[#c4f2e2] active:opacity-75"
         >
-          <Feather
-            name="menu"
-            size={20}
-            color={isDark ? "#93c5fd" : "#2563eb"}
-          />
+          <Feather name="menu" size={20} color="#155348" />
         </Pressable>
       </View>
 
@@ -315,8 +295,8 @@ export default function ChatScreen() {
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingTop: 24,
-          paddingBottom: 112,
+          paddingTop: 20,
+          paddingBottom: composerHeight + 12,
           flexGrow: 1,
         }}
         className="flex-1"
@@ -325,7 +305,7 @@ export default function ChatScreen() {
           <WelcomeState onSuggestion={(content) => setDraft(content)} />
         ) : messages.isPending ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color="#2563eb" />
+            <ActivityIndicator color={isDark ? "#93c5fd" : "#1d4ed8"} />
             <Text className="mt-3 text-gray-500 dark:text-gray-400">
               Cargando conversación...
             </Text>
@@ -342,7 +322,7 @@ export default function ChatScreen() {
                 accessibilityRole="button"
                 onPress={() => void messages.fetchNextPage()}
                 disabled={messages.isFetchingNextPage}
-                className="mb-5 self-center rounded-xl bg-gray-200 px-4 py-3 disabled:opacity-50 dark:bg-gray-800"
+                className="mb-5 self-center rounded-xl border border-slate-300 bg-white px-4 py-3 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800"
               >
                 <Text className="text-sm font-semibold text-blue-700 dark:text-blue-300">
                   {messages.isFetchingNextPage
@@ -366,9 +346,12 @@ export default function ChatScreen() {
               <Text className="text-red-600 dark:text-red-400">{jobError}</Text>
             )}
             {pendingJobId && (
-              <View className="mb-4 self-start rounded-2xl bg-white px-4 py-3 dark:bg-gray-900">
+              <View className="mb-4 self-start rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
                 <View className="flex-row items-center gap-2">
-                  <ActivityIndicator size="small" color="#2563eb" />
+                  <ActivityIndicator
+                    size="small"
+                    color={isDark ? "#93c5fd" : "#1d4ed8"}
+                  />
                   <Text className="text-sm text-gray-600 dark:text-gray-300">
                     Preparando respuesta municipal...
                   </Text>
@@ -380,6 +363,7 @@ export default function ChatScreen() {
       </KeyboardChatScrollView>
 
       <KeyboardStickyView
+        onLayout={(event) => setComposerHeight(event.nativeEvent.layout.height)}
         style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}
       >
         <Composer
@@ -388,6 +372,7 @@ export default function ChatScreen() {
           onSend={() => void submit()}
           disabled={isSending || sessionClosed || closing}
           isSending={isSending}
+          waitingForReply={Boolean(pendingJobId)}
           closed={sessionClosed}
         />
       </KeyboardStickyView>
@@ -411,29 +396,55 @@ function WelcomeState({
 }: {
   onSuggestion: (content: string) => void;
 }) {
+  const isDark = useColorScheme() === "dark";
+  const suggestionIconColor = isDark ? "#bfdbfe" : "#1d4ed8";
   return (
-    <View className="flex-1 justify-center pb-24">
-      <View className="h-16 w-16 items-center justify-center rounded-3xl bg-blue-600">
-        <Feather name="message-circle" size={30} color="white" />
+    <View className="mx-auto w-full max-w-xl flex-1 justify-center gap-5">
+      <View className="gap-3 rounded-3xl border border-[#2e4a65] bg-[#162b43] p-5 dark:border-[#52718f]">
+        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-[#c4f2e2]">
+          <MaterialCommunityIcons
+            name="robot-outline"
+            size={28}
+            color="#155348"
+          />
+        </View>
+        <Text
+          accessibilityRole="header"
+          className="text-2xl font-bold text-white"
+        >
+          ¿En qué te ayudo?
+        </Text>
+        <Text className="text-base leading-6 text-slate-200">
+          Pregunta por servicios municipales o consulta una incidencia con su
+          código de seguimiento.
+        </Text>
       </View>
-      <Text className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
-        ¿En qué te ayudo?
-      </Text>
-      <Text className="mt-3 text-base leading-6 text-gray-600 dark:text-gray-300">
-        Pregunta por servicios municipales o consulta una incidencia con su
-        código de seguimiento.
-      </Text>
-      <View className="mt-8 gap-3">
-        {SUGGESTIONS.map((suggestion) => (
+      <View className="gap-2.5">
+        <Text className="text-sm font-bold text-slate-700 dark:text-slate-200">
+          Consultas sugeridas
+        </Text>
+        {SUGGESTIONS.map((suggestion, index) => (
           <Pressable
             key={suggestion}
             accessibilityRole="button"
             onPress={() => onSuggestion(suggestion)}
-            className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900"
+            className="flex-row items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 active:opacity-75 dark:border-slate-700 dark:bg-slate-900"
           >
-            <Text className="text-sm leading-5 font-medium text-gray-700 dark:text-gray-200">
+            <View className="h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-slate-800">
+              <Feather
+                name={index === 0 ? "message-square" : "search"}
+                size={17}
+                color={suggestionIconColor}
+              />
+            </View>
+            <Text className="flex-1 text-sm leading-5 font-medium text-slate-800 dark:text-slate-200">
               {suggestion}
             </Text>
+            <Feather
+              name="arrow-up-right"
+              size={16}
+              color={suggestionIconColor}
+            />
           </Pressable>
         ))}
       </View>
@@ -447,6 +458,7 @@ function Composer({
   onSend,
   disabled,
   isSending,
+  waitingForReply,
   closed,
 }: {
   value: string;
@@ -454,26 +466,35 @@ function Composer({
   onSend: () => void;
   disabled: boolean;
   isSending: boolean;
+  waitingForReply: boolean;
   closed: boolean;
 }) {
-  const canSend = Boolean(value.trim()) && !disabled;
+  const isDark = useColorScheme() === "dark";
+  const canSend = Boolean(value.trim()) && !disabled && !waitingForReply;
+  const sendIconColor = canSend
+    ? isDark
+      ? "#155348"
+      : "#fff"
+    : isDark
+      ? "#cbd5e1"
+      : "#475569";
   return (
-    <View className="pb-safe border-t border-gray-200 bg-white px-4 pt-3 dark:border-gray-800 dark:bg-gray-900">
+    <View className="pb-safe border-t border-slate-200 bg-white px-4 pt-3 dark:border-slate-700 dark:bg-slate-900">
       {closed && (
         <Text className="mb-2 text-center text-xs font-medium text-amber-700 dark:text-amber-300">
           Esta conversación está cerrada.
         </Text>
       )}
-      <View className="flex-row items-end rounded-3xl bg-gray-100 p-2 dark:bg-gray-800">
+      <View className="flex-row items-end rounded-3xl border border-slate-300 bg-slate-50 p-2 dark:border-slate-500 dark:bg-slate-800">
         <TextInput
           value={value}
           onChangeText={onChangeText}
           editable={!disabled}
           placeholder={closed ? "Conversación cerrada" : "Escribe tu consulta"}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={isDark ? "#cbd5e1" : "#64748b"}
           multiline
           maxLength={4000}
-          className="max-h-28 flex-1 px-3 py-2 text-base text-gray-900 dark:text-white"
+          className="max-h-28 min-h-11 flex-1 px-3 py-2.5 text-base text-slate-900 dark:text-white"
           accessibilityLabel="Escribe tu consulta para el asistente municipal"
         />
         <Pressable
@@ -481,16 +502,16 @@ function Composer({
           accessibilityLabel="Enviar consulta"
           onPress={onSend}
           disabled={!canSend}
-          className="h-11 w-11 items-center justify-center rounded-full bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-700"
+          className={`h-11 w-11 items-center justify-center rounded-2xl ${canSend ? "bg-[#162b43] active:opacity-75 dark:bg-[#c4f2e2]" : "bg-slate-200 dark:bg-slate-700"}`}
         >
           {isSending ? (
-            <ActivityIndicator size="small" color="white" />
+            <ActivityIndicator size="small" color={sendIconColor} />
           ) : (
-            <Feather name="arrow-up" size={20} color="white" />
+            <Feather name="arrow-up" size={20} color={sendIconColor} />
           )}
         </Pressable>
       </View>
-      <Text className="mt-1 px-2 text-right text-[11px] text-gray-400">
+      <Text className="mt-1 px-2 pb-2 text-right text-[11px] text-slate-600 dark:text-slate-300">
         {value.length}/4000
       </Text>
     </View>
@@ -501,7 +522,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === "USER";
   return (
     <View
-      className={`mb-4 max-w-[88%] rounded-3xl px-4 py-3 ${isUser ? "self-end rounded-br-md bg-blue-600" : "self-start rounded-bl-md bg-white dark:bg-gray-900"}`}
+      className={`mb-4 max-w-[88%] rounded-3xl border px-4 py-3 ${isUser ? "self-end rounded-br-md border-[#2e4a65] bg-[#162b43] dark:border-[#52718f]" : "self-start rounded-bl-md border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"}`}
     >
       <Text
         className={`text-base leading-6 ${isUser ? "text-white" : "text-gray-800 dark:text-gray-100"}`}
@@ -509,7 +530,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         {message.content}
       </Text>
       <Text
-        className={`mt-2 text-[11px] ${isUser ? "text-blue-100" : "text-gray-400"}`}
+        className={`mt-2 text-[11px] ${isUser ? "text-slate-200" : "text-slate-600 dark:text-slate-300"}`}
       >
         {formatDate(message.createdAt)}
       </Text>
@@ -555,18 +576,25 @@ function InlineError({
   message: string;
   onRetry: () => void;
 }) {
+  const isDark = useColorScheme() === "dark";
   return (
     <View className="flex-1 items-center justify-center px-6">
-      <Feather name="wifi-off" size={30} color="#dc2626" />
+      <Feather
+        name="wifi-off"
+        size={30}
+        color={isDark ? "#fca5a5" : "#b91c1c"}
+      />
       <Text className="mt-3 text-center text-gray-600 dark:text-gray-300">
         {message}
       </Text>
       <Pressable
         accessibilityRole="button"
         onPress={onRetry}
-        className="mt-4 rounded-xl bg-blue-600 px-4 py-3"
+        className="mt-4 rounded-xl bg-[#162b43] px-4 py-3 dark:bg-[#c4f2e2]"
       >
-        <Text className="font-bold text-white">Reintentar</Text>
+        <Text className="font-bold text-white dark:text-[#155348]">
+          Reintentar
+        </Text>
       </Pressable>
     </View>
   );
@@ -588,94 +616,139 @@ function ChatHistoryDrawer({
   reducedMotion: boolean;
 }) {
   const items = sessions.data?.pages.flatMap((page) => page.data.items) ?? [];
-  const duration = reducedMotion ? 0 : 220;
+  const insets = useSafeAreaInsets();
+  const isDark = useColorScheme() === "dark";
+  const controlColor = isDark ? "#e2e8f0" : "#16283e";
+  const accent = isDark ? "#93c5fd" : "#1d4ed8";
   return (
-    <Animated.View
-      entering={FadeIn.duration(duration)}
-      exiting={FadeOut.duration(duration)}
-      className="absolute inset-0 z-10 flex-row"
+    <Modal
+      transparent
+      statusBarTranslucent
+      animationType={reducedMotion ? "none" : "fade"}
+      onRequestClose={onClose}
     >
-      <Animated.View
-        entering={SlideInLeft.duration(duration)}
-        exiting={SlideOutLeft.duration(duration)}
-        className="pt-safe w-[84%] max-w-96 bg-white dark:bg-gray-900"
+      <View
+        className="flex-1"
+        style={{ marginTop: insets.top, marginBottom: insets.bottom }}
       >
-        <View className="flex-row items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-          <Text className="text-xl font-bold text-gray-900 dark:text-white">
-            Conversaciones
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar historial"
-            onPress={onClose}
-            className="h-11 w-11 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800"
-          >
-            <Feather name="x" size={20} color="#6b7280" />
-          </Pressable>
-        </View>
         <Pressable
-          accessibilityRole="button"
-          onPress={onNew}
-          className="mx-5 mt-5 min-h-12 flex-row items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3"
+          accessible={false}
+          onPress={onClose}
+          className="absolute inset-0 bg-slate-950/30 dark:bg-black/45"
+        />
+        <Animated.View
+          entering={reducedMotion ? undefined : SlideInLeft.duration(230)}
+          accessibilityViewIsModal
+          onAccessibilityEscape={onClose}
+          style={{
+            marginTop: 12,
+            marginBottom: 12,
+            marginLeft: Math.max(12, insets.left),
+            width: "86%",
+            maxWidth: 352,
+            flexShrink: 1,
+          }}
         >
-          <Feather name="plus" size={18} color="white" />
-          <Text className="font-bold text-white">Nueva conversación</Text>
-        </Pressable>
-        {sessions.isPending ? (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color="#2563eb" />
-          </View>
-        ) : sessions.isError ? (
-          <InlineError
-            message="No pudimos cargar tus conversaciones."
-            onRetry={() => void sessions.refetch()}
-          />
-        ) : (
-          <ScrollView className="flex-1 px-3 py-4">
-            {items.length === 0 && (
-              <Text className="px-3 py-6 text-center text-gray-500 dark:text-gray-400">
-                Aún no tienes conversaciones.
-              </Text>
-            )}
-            {items.map((session) => (
-              <Pressable
-                key={session.id}
-                accessibilityRole="button"
-                onPress={() => onSelect(session)}
-                className={`mb-1 rounded-xl px-3 py-4 ${session.id === selectedId ? "bg-blue-50 dark:bg-blue-950" : ""}`}
-              >
+          <View className="shrink overflow-hidden rounded-3xl border border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900">
+            <View className="gap-3 border-b border-slate-200 p-4 dark:border-slate-700">
+              <View className="flex-row items-center justify-between gap-2">
                 <Text
-                  numberOfLines={1}
-                  className="font-semibold text-gray-800 dark:text-gray-100"
+                  accessibilityRole="header"
+                  className="flex-1 text-lg font-bold text-slate-900 dark:text-white"
                 >
-                  {session.title}
+                  Conversaciones
                 </Text>
-                <Text className="mt-1 text-xs text-gray-400">
-                  {formatDate(session.updatedAt)}
-                </Text>
-              </Pressable>
-            ))}
-            {sessions.hasNextPage && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Cerrar historial"
+                  onPress={onClose}
+                  className="h-11 w-11 items-center justify-center rounded-xl bg-slate-100 active:opacity-70 dark:bg-slate-700"
+                >
+                  <Feather name="x" size={20} color={controlColor} />
+                </Pressable>
+              </View>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => void sessions.fetchNextPage()}
-                disabled={sessions.isFetchingNextPage}
-                className="my-3 items-center rounded-xl bg-gray-100 px-4 py-3 dark:bg-gray-800"
+                accessibilityLabel="Nueva conversación"
+                onPress={onNew}
+                className="min-h-12 flex-row items-center justify-center gap-2 rounded-xl bg-[#c4f2e2] px-3 py-2 active:opacity-75"
               >
-                <Text className="font-semibold text-blue-700 dark:text-blue-300">
-                  {sessions.isFetchingNextPage ? "Cargando..." : "Cargar más"}
+                <Feather name="plus" size={18} color="#155348" />
+                <Text className="font-bold text-[#155348]">
+                  Nueva conversación
                 </Text>
               </Pressable>
+            </View>
+            {sessions.isPending ? (
+              <View className="items-center justify-center p-6">
+                <ActivityIndicator color={accent} />
+              </View>
+            ) : sessions.isError ? (
+              <View className="py-5">
+                <InlineError
+                  message="No pudimos cargar tus conversaciones."
+                  onRetry={() => void sessions.refetch()}
+                />
+              </View>
+            ) : (
+              <ScrollView
+                style={{ flexGrow: 0 }}
+                contentContainerStyle={{ padding: 12, gap: 8 }}
+              >
+                {items.length === 0 && (
+                  <Text className="px-3 py-4 text-center text-slate-600 dark:text-slate-300">
+                    Aún no tienes conversaciones.
+                  </Text>
+                )}
+                {items.map((session) => (
+                  <Pressable
+                    key={session.id}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: session.id === selectedId }}
+                    onPress={() => onSelect(session)}
+                    className={`flex-row items-center gap-3 rounded-2xl border p-3 active:opacity-70 ${session.id === selectedId ? "border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-950" : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800"}`}
+                  >
+                    <Feather name="message-square" size={18} color={accent} />
+                    <View className="min-w-0 flex-1">
+                      <Text
+                        numberOfLines={1}
+                        className="font-semibold text-slate-900 dark:text-white"
+                      >
+                        {session.title}
+                      </Text>
+                      <Text
+                        numberOfLines={1}
+                        className="mt-1 text-xs text-slate-600 dark:text-slate-300"
+                      >
+                        {formatDate(session.updatedAt)}
+                      </Text>
+                    </View>
+                    <Feather
+                      name="chevron-right"
+                      size={17}
+                      color={controlColor}
+                    />
+                  </Pressable>
+                ))}
+                {sessions.hasNextPage && (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => void sessions.fetchNextPage()}
+                    disabled={sessions.isFetchingNextPage}
+                    className="items-center rounded-xl bg-slate-100 px-4 py-3 disabled:opacity-60 dark:bg-slate-800"
+                  >
+                    <Text className="font-semibold text-blue-700 dark:text-blue-300">
+                      {sessions.isFetchingNextPage
+                        ? "Cargando..."
+                        : "Cargar más"}
+                    </Text>
+                  </Pressable>
+                )}
+              </ScrollView>
             )}
-          </ScrollView>
-        )}
-      </Animated.View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Cerrar historial"
-        onPress={onClose}
-        className="flex-1 bg-black/40"
-      />
-    </Animated.View>
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }

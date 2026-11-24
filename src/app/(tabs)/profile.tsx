@@ -7,10 +7,49 @@ import { useMe } from "@/infrastructure/hooks/use-users";
 import ErrorState from "@/presentation/components/ErrorState";
 import PendingState from "@/presentation/components/PendingState";
 import ThemeToggle from "@/presentation/components/ThemeToggle";
-import { ScrollView, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 
 const ProfilePage = () => {
+  const router = useRouter();
+  const isDark = useColorScheme() === "dark";
+
+  return (
+    <View className="pt-safe flex-1 bg-gray-50 dark:bg-gray-950">
+      <View className="flex-row items-center gap-3 px-5 py-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Volver a Inicio"
+          onPress={() => router.navigate("/")}
+          className="h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white active:opacity-70 dark:border-slate-600 dark:bg-slate-800"
+        >
+          <Feather
+            name="arrow-left"
+            size={21}
+            color={isDark ? "#e2e8f0" : "#16283e"}
+          />
+        </Pressable>
+        <Text
+          accessibilityRole="header"
+          className="text-lg font-bold text-slate-900 dark:text-white"
+        >
+          Mi perfil
+        </Text>
+      </View>
+      <ProfileContent />
+    </View>
+  );
+};
+
+const ProfileContent = () => {
   const me = useMe();
+  const isDark = useColorScheme() === "dark";
 
   if (me.isPending) {
     return (
@@ -34,45 +73,46 @@ const ProfilePage = () => {
   }
 
   const data = me.data.data;
-  const fullName = `${data.firstName} ${data.lastName}`;
-  const initials = `${data.firstName[0] ?? ""}${data.lastName[0] ?? ""}`;
+  const fullName = [data.firstName, data.lastName].filter(Boolean).join(" ");
+  const initials =
+    `${data.firstName[0] ?? ""}${data.lastName?.[0] ?? ""}`.toUpperCase();
+  const iconColor = isDark ? "#bfdbfe" : "#1d4ed8";
 
   return (
-    <ScrollView className="flex-1 bg-gray-50 dark:bg-gray-950">
-      <View className="pt-safe overflow-hidden rounded-b-3xl bg-blue-600 px-6 pb-8 dark:bg-blue-950">
-        <Text className="mt-5 text-sm font-medium text-blue-100">
-          MI PERFIL
-        </Text>
-        <View className="mt-5 flex-row items-center gap-4">
-          <View className="h-18 w-18 items-center justify-center rounded-3xl border border-blue-300 bg-blue-500 dark:border-blue-700 dark:bg-blue-900">
-            <Text className="text-2xl font-bold text-white">{initials}</Text>
+    <ScrollView className="flex-1">
+      <View className="mx-auto w-full max-w-xl gap-6 px-5 pt-2 pb-7">
+        <View className="flex-row items-center gap-4 rounded-3xl border border-[#2e4a65] bg-[#162b43] p-5 dark:border-[#52718f]">
+          <View className="h-14 w-14 items-center justify-center rounded-2xl bg-[#c4f2e2]">
+            <Text className="text-xl font-bold text-[#155348]">{initials}</Text>
           </View>
-          <View className="flex-1">
-            <Text className="text-xl font-bold text-white">{fullName}</Text>
-            <Text className="mt-1 text-sm text-blue-100">{data.role}</Text>
-          </View>
-        </View>
-      </View>
-
-      <View className="gap-7 px-5 py-7">
-        <View>
-          <Text className="mb-3 text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
-            INFORMACIÓN PERSONAL
+          <Text className="flex-1 text-xl font-bold text-white">
+            {fullName}
           </Text>
-          <View className="overflow-hidden rounded-2xl bg-white dark:bg-gray-900">
+        </View>
+        <View>
+          <Text
+            accessibilityRole="header"
+            className="mb-2 text-base font-bold text-slate-900 dark:text-slate-100"
+          >
+            Información personal
+          </Text>
+          <View className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
             <ProfileDetail
               icon="credit-card"
+              iconColor={iconColor}
               label="Documento"
               value={data.dni}
             />
             <ProfileDetail
               icon="mail"
+              iconColor={iconColor}
               label="Correo electrónico"
               value={data.email ?? "No registrado"}
               bordered
             />
             <ProfileDetail
               icon="phone"
+              iconColor={iconColor}
               label="Teléfono"
               value={data.phone}
               bordered
@@ -81,30 +121,29 @@ const ProfilePage = () => {
         </View>
 
         <View>
-          <Text className="mb-3 text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
-            APARIENCIA
+          <Text
+            accessibilityRole="header"
+            className="mb-2 text-base font-bold text-slate-900 dark:text-slate-100"
+          >
+            Apariencia
           </Text>
-          <View className="flex-row items-center justify-between rounded-2xl bg-white px-4 py-3 dark:bg-gray-900">
-            <View className="flex-row items-center gap-3">
-              <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950">
-                <Feather name="moon" size={19} color="#2563eb" />
-              </View>
-              <View>
-                <Text className="font-semibold text-gray-900 dark:text-white">
-                  Tema de la aplicación
-                </Text>
-                <Text className="text-sm text-gray-500 dark:text-gray-400">
-                  Claro u oscuro
-                </Text>
-              </View>
+          <View className="flex-row items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-900">
+            <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-slate-800">
+              <Feather name="moon" size={19} color={iconColor} />
             </View>
+            <Text className="flex-1 font-semibold text-slate-900 dark:text-white">
+              Modo oscuro
+            </Text>
             <ThemeToggle />
           </View>
         </View>
 
         <View>
-          <Text className="mb-3 text-xs font-semibold tracking-wider text-gray-500 dark:text-gray-400">
-            CUENTA
+          <Text
+            accessibilityRole="header"
+            className="mb-2 text-base font-bold text-slate-900 dark:text-slate-100"
+          >
+            Cuenta
           </Text>
           <AccountAction
             title="Editar perfil"
@@ -182,6 +221,7 @@ const ProfilePage = () => {
 
 type ProfileDetailProps = {
   icon: "credit-card" | "mail" | "phone";
+  iconColor: string;
   label: string;
   value: string;
   bordered?: boolean;
@@ -189,19 +229,20 @@ type ProfileDetailProps = {
 
 const ProfileDetail = ({
   icon,
+  iconColor,
   label,
   value,
   bordered = false,
 }: ProfileDetailProps) => {
   return (
     <View
-      className={`flex-row items-center gap-3 px-4 py-4 ${bordered ? "border-t border-gray-100 dark:border-gray-800" : ""}`}
+      className={`flex-row items-center gap-3 px-4 py-3.5 ${bordered ? "border-t border-slate-200 dark:border-slate-700" : ""}`}
     >
-      <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950">
-        <Feather name={icon} size={19} color="#2563eb" />
+      <View className="h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-slate-800">
+        <Feather name={icon} size={19} color={iconColor} />
       </View>
       <View className="flex-1">
-        <Text className="text-xs text-gray-500 dark:text-gray-400">
+        <Text className="text-xs text-slate-600 dark:text-slate-300">
           {label}
         </Text>
         <Text className="mt-0.5 text-base font-medium text-gray-900 dark:text-white">
