@@ -12,6 +12,9 @@ import {
 } from "@/core/entities/chat.entity";
 import { ApiEnvelope } from "@/shared/interfaces/api-response.interface";
 import { AxiosInstance } from "axios";
+import { z } from "zod";
+
+const incidentIdSchema = z.uuid();
 
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -30,12 +33,19 @@ function normalizeRole(value: unknown): ChatRole {
 
 function normalizeMessage(value: unknown): ChatMessage {
   const source = asRecord(value);
+  const role = normalizeRole(source.role);
+  const metadata = asRecord(source.metadata);
+  const incidentId =
+    role === "ASSISTANT" && metadata.kind === "TRACKING"
+      ? incidentIdSchema.safeParse(metadata.incidentId).data
+      : undefined;
   return {
     id: asString(source.id),
     sessionId: asString(source.sessionId),
-    role: normalizeRole(source.role),
+    role,
     content: asString(source.content),
     createdAt: asString(source.createdAt),
+    ...(incidentId ? { incidentId } : {}),
   };
 }
 

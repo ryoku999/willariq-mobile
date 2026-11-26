@@ -6,6 +6,7 @@ export type ChatMessage = {
   role: ChatRole;
   content: string;
   createdAt: string;
+  incidentId?: string;
 };
 
 export type ChatSession = {

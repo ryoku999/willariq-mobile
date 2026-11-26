@@ -101,6 +101,10 @@ export default function ChatScreen() {
     closeSession.isPending && closeSession.variables === selectedSession?.id;
   const isSending = createSession.isPending || sendMessage.isPending;
 
+  const openIncident = (id: string) => {
+    router.push({ pathname: "/incident-detail/[id]", params: { id } });
+  };
+
   useEffect(() => {
     if (!latestMessageId) return;
     requestAnimationFrame(() =>
@@ -342,7 +346,11 @@ export default function ChatScreen() {
               </Pressable>
             )}
             {items.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble
+                key={message.id}
+                message={message}
+                onOpenIncident={openIncident}
+              />
             ))}
             {failedMessage &&
               failedMessage.sessionId === selectedSession.id && (
@@ -550,8 +558,15 @@ function Composer({
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+function MessageBubble({
+  message,
+  onOpenIncident,
+}: {
+  message: ChatMessage;
+  onOpenIncident: (id: string) => void;
+}) {
   const isUser = message.role === "USER";
+  const { incidentId } = message;
   return (
     <View
       className={`mb-4 max-w-[88%] rounded-3xl border px-4 py-3 ${isUser ? "self-end rounded-br-md border-[#2e4a65] bg-[#162b43] dark:border-[#52718f]" : "self-start rounded-bl-md border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"}`}
@@ -561,6 +576,18 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       >
         {message.content}
       </Text>
+      {incidentId && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityHint="Abre el detalle de esta incidencia"
+          onPress={() => onOpenIncident(incidentId)}
+          className="mt-2 min-h-11 self-start justify-center rounded-xl bg-[#162b43] px-3 py-2 active:opacity-75 dark:bg-[#c4f2e2]"
+        >
+          <Text className="text-sm font-semibold text-white dark:text-[#155348]">
+            Ver detalles
+          </Text>
+        </Pressable>
+      )}
       <Text
         className={`mt-2 text-[11px] ${isUser ? "text-slate-200" : "text-slate-600 dark:text-slate-300"}`}
       >
